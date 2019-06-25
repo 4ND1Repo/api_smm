@@ -1,0 +1,12 @@
+version: '2'
+
+services:
+  api_smm:
+    image: php_sqlsrv:latest
+    ports:
+      - "127.0.2.1:80:8080"
+    volumes:
+      - ./:/app
+      - ./conf/default:/etc/nginx/sites-available/default
+      - ./conf/www.conf:/opt/bitnami/php/etc/php-fpm.d/www.conf
+    command: ['/app/conf/run.sh']
