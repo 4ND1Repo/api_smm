@@ -1,7 +1,10 @@
 version: '2'
 
 services:
-  api_smm:
+  smm:
+    build:
+      context: ./
+      dockerfile: Dockerfile
     image: php_sqlsrv:latest
     ports:
       - "127.0.2.1:80:8080"
@@ -9,4 +12,15 @@ services:
       - ./:/app
       - ./conf/default:/etc/nginx/sites-available/default
       - ./conf/www.conf:/opt/bitnami/php/etc/php-fpm.d/www.conf
+    depends_on:
+      - db
+    extra_hosts:
+      - "db.smm.co.id:172.17.0.1"
     command: ['/app/conf/run.sh']
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2017-CU14-ubuntu
+    ports:
+      - "1433:1433"
+    volumes:
+      - /srv/database/sqlsrv/data:/var/opt/mssql/data

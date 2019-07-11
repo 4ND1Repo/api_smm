@@ -1,19 +1,19 @@
 #!/bin/bash
 
+if [ -d "storage" ]; then
+	chmod -Rf 777 storage/
+fi
+
 composer_file="composer.json"
-if [ -f "$composer_file" ]
-then
-	if [ ! -d "vendor"]
-	then
+if [ -f "$composer_file" ]; then
+	if [ ! -d "vendor" ]; then
 		composer update
 	fi
 fi
 
 npm_file="package.json"
-if [ -f "$npm_file" ]
-then
-	if [ ! -d "node_modules"]
-	then
+if [ -f "$npm_file" ]; then
+	if [ ! -d "node_modules" ]; then
 		npm install
 	fi
 fi
