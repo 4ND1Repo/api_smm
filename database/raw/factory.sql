@@ -363,7 +363,13 @@ INSERT INTO [master].[master_division](division_code,division_name,department_co
 INSERT INTO [master].[master_division](division_code,division_name,department_code,company_code) VALUES('SMDV04', 'Division 02', 'SMDP02', 'CP01')
 INSERT INTO [master].[master_division](division_code,division_name,department_code,company_code) VALUES('SMDV05', 'Division 03', 'SMDP02', 'CP01')
 GO
-INSERT INTO [master].[master_status](status_code,status_label) VALUES('ST00', 'Not Active'), ('ST01', 'Active')
+INSERT INTO [master].[master_status](status_code,status_label) VALUES
+('ST00', 'Not Active'),
+('ST01', 'Active'),
+('ST02', 'Proses'),
+('ST03', 'Tidak Cukup'),
+('ST04', 'Pembelian'),
+('ST05', 'Selesai')
 GO
 INSERT INTO [account].[user_menu](company_code, department_code, division_code, id_menu) VALUES
 ('CP01', 'SMDP01', 'SMDV01', 1),
