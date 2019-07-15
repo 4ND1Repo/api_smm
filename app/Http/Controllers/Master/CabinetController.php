@@ -52,9 +52,12 @@ class CabinetController extends Controller
             $cab = new Cabinet;
             $cab->cabinet_code = $this->__generate_code();
             $cab->cabinet_name = $r->cabinet_name;
-            $cab->parent_cabinet_code = $r->has('parent_cabinet_code')?(!empty($r->parent_cabinet_code)?$r->parent_cabinet_code:NULL):NULL;
+            if($r->has('parent_cabinet_code')){
+                if(!empty($r->parent_cabinet_code))
+                    $cab->parent_cabinet_code = $r->parent_cabinet_code;
+            }
             $cab->cabinet_description = $r->cabinet_description;
-            $cab->is_child = 1;
+            $cab->is_child = (int)1;
             $cab->menu_page = $r->menu_page;
             if($cab->save()){
                 if($r->has('parent_cabinet_code')){

@@ -145,7 +145,7 @@ CREATE TABLE [master].[master_city](
 GO
 CREATE TABLE [master].[master_cabinet](
 	[cabinet_code] [varchar](10) NOT NULL,
-	[cabinet_name] [varchar](4) NULL,
+	[cabinet_name] [varchar](30) NULL,
 	[cabinet_description] [varchar](255) NULL,
 	[menu_page] [varchar](20) NULL,
 	[parent_cabinet_code] [varchar](10) NULL,
