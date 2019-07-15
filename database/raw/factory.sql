@@ -149,7 +149,7 @@ CREATE TABLE [master].[master_cabinet](
 	[cabinet_description] [varchar](255) NULL,
 	[menu_page] [varchar](20) NULL,
 	[parent_cabinet_code] [varchar](10) NULL,
-	[is_child] [int](1) NULL DEFAULT((1)),
+	[is_child] [integer] NULL DEFAULT((1)),
 	[status_code] [varchar](4) NULL DEFAULT('ST01'),
 ) ON [PRIMARY]
 GO
@@ -235,6 +235,82 @@ CREATE TABLE [account].[user](
 	[last_login] [datetime] NULL,
 ) ON [PRIMARY]
 GO
+
+-- store procedure
+CREATE PROCEDURE stock.stock_out
+	@stcode VARCHAR(20),
+	@qty DECIMAL(20,2),
+	@nik VARCHAR(10),
+	@page VARCHAR(10),
+	@notes VARCHAR(255)
+AS
+	SET NOCOUNT ON 
+	DECLARE @cmin INT, @cmax INT
+	
+	DROP TABLE IF EXISTS #temp
+	
+	IF EXISTS (SELECT * FROM dbo.sysobjects where id = object_id(N'#temp') and OBJECTPROPERTY(id, N'IsTable') = 1)
+		BEGIN
+			TRUNCATE TABLE #temp
+		END
+	
+	IF NOT EXISTS (SELECT * FROM dbo.sysobjects where id = object_id(N'#temp') and OBJECTPROPERTY(id, N'IsTable') = 1)
+		BEGIN
+			CREATE TABLE #temp (
+				id INT,
+				main_stock_code VARCHAR(20),
+				supplier_code VARCHAR(20),
+				stock_price DECIMAL(20,2),
+				stock_date DATETIME,
+				qty DECIMAL(20,2)
+			)
+		END
+	
+	INSERT INTO #temp SELECT ROW_NUMBER() OVER(ORDER BY stock_date ASC) AS id, stock.qty.main_stock_code, supplier_code, stock_price, stock_date, sum(qty) AS qty
+	FROM stock.qty
+	JOIN stock.stock ON stock.stock.main_stock_code = stock.qty.main_stock_code
+	WHERE qty > 0 AND stock_code = @stcode
+	GROUP BY stock.qty.main_stock_code, supplier_code, stock_price, stock_date
+	ORDER BY stock_date ASC
+	
+	SELECT @cmin=min(id), @cmax=max(id) FROM #temp
+	WHILE @cmin <= @cmax
+	BEGIN
+		-- getting data qty
+		DECLARE @main_stock_code VARCHAR(20), 
+			@supplier_code VARCHAR(20), 
+			@stock_price DECIMAL(20,2), 
+			@stock_date DATETIME, 
+			@stock_qty DECIMAL(20,2)
+	
+		SELECT @main_stock_code = main_stock_code, @supplier_code = supplier_code, @stock_price = stock_price, @stock_date = stock_date, @stock_qty = qty FROM #temp WHERE id = @cmin
+	
+		-- processing movement stock
+		IF @qty >= @stock_qty
+			BEGIN
+				-- insert all of stock into new stock out table
+				INSERT INTO stock.qty_out(main_stock_code, supplier_code, stock_price, stock_date, qty, nik, stock_notes) VALUES(@main_stock_code, @supplier_code, @stock_price, @stock_date, @stock_qty, @nik, @notes)
+				-- update to zero stock already
+				UPDATE stock.qty SET qty = 0 WHERE main_stock_code = @main_stock_code AND supplier_code = @supplier_code AND stock_price = @stock_price AND stock_date = @stock_date
+				-- update stock needed leftovers
+				SET @qty = @qty - @stock_qty
+			END
+		ELSE IF @qty < @stock_qty
+			BEGIN
+				-- insert last stock needed to new stock out table
+				INSERT INTO stock.qty_out(main_stock_code, supplier_code, stock_price, stock_date, qty, nik, stock_notes) VALUES(@main_stock_code, @supplier_code, @stock_price, @stock_date, @qty, @nik, @notes)
+				-- update stock already
+				UPDATE stock.qty SET qty = @stock_qty - @qty WHERE main_stock_code = @main_stock_code AND supplier_code = @supplier_code AND stock_price = @stock_price AND stock_date = @stock_date
+				-- update stock needed leftovers
+				SET @qty = 0
+			END
+		
+		IF @qty = 0
+			BREAK
+		SET @cmin = @cmin+1
+	END
+	SELECT 1
+RETURN
 
 -- insert default data
 INSERT INTO [master].[master_status](status_code,status_label) VALUES
