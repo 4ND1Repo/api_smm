@@ -155,7 +155,7 @@ class StockController extends Controller
         $return = [];
         // $stock = Stock::join('master.master_stock','master.master_stock.stock_code','=','stock.stock.stock_code');
         $stock = DB::select(DB::raw("SELECT * FROM (
-            SELECT stock.stock.main_stock_code, CONCAT(master.master_stock.stock_code,' - ',master.master_stock.stock_name,' - ',master.master_stock.stock_type,' - ',master.master_stock.stock_size) as stock_name
+            SELECT stock.stock.main_stock_code, (master.master_stock.stock_code + ' - ' + master.master_stock.stock_name + ' - ' + master.master_stock.stock_type + ' - ' + master.master_stock.stock_size) as stock_name
             FROM stock.stock 
             JOIN master.master_stock ON master.master_stock.stock_code = stock.stock.stock_code
         ) as stock WHERE stock_name LIKE '%".$r->find."%'"));

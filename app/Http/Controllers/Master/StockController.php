@@ -27,9 +27,8 @@ class StockController extends Controller
         //
     }
 
-    private function _generate_prefix(){
-        $prefix = "STK";
-        $SP = Stock::select('stock_code')->orderBy('stock_code', 'DESC')->get();
+    private function _generate_prefix($prefix = "STK"){
+        $SP = Stock::select('stock_code')->where('stock_code','LIKE',$prefix.'%')->orderBy('stock_code', 'DESC')->get();
         if($SP->count() > 0){
             $SP = $SP->first();
             $tmp = explode($prefix, $SP->stock_code);
@@ -53,7 +52,7 @@ class StockController extends Controller
         $res = false;
 
         $stock = new Stock;
-        $stock->stock_code = $this->_generate_prefix();
+        $stock->stock_code = $this->_generate_prefix($r->input('category_code'));
         $stock->stock_name = $r->input('stock_name');
         $stock->stock_size = $r->input('stock_size');
         $stock->stock_brand = $r->input('stock_brand');
@@ -81,8 +80,6 @@ class StockController extends Controller
                 'stock_type' => $r->input('stock_type'),
                 'stock_color' => $r->input('stock_color'),
                 'measure_code' => $r->input('measure_code'),
-                'stock_price' => $r->input('stock_price'),
-                'stock_deliver_price' => $r->input('stock_deliver_price'),
                 'stock_min_qty' => $r->input('stock_min_qty'),
                 'stock_max_qty' => $r->input('stock_max_qty'),
                 'stock_daily_use' => $r->has('stock_daily_use')?1:0
@@ -108,10 +105,7 @@ class StockController extends Controller
             'stock_brand',
             'stock_type',
             'stock_color',
-            'master_measure.measure_type',
-            'stock_price',
-            'stock_deliver_price',
-            'stock_qty'
+            'master_measure.measure_type'
         ];
 
         // generate default
@@ -129,11 +123,7 @@ class StockController extends Controller
         if(isset($input['query'])){
             if(!is_null($input['query']) and !empty($input['query'])){
                 foreach($input['query'] as $field => $val){
-                    if($field == 'measure_code')
-                        $sup->where("master.master_stock.".$field,$val);
-                    else if($field == 'stock_daily_use')
-                        $sup->where("master.master_stock.".$field,$val);
-                    else if($field == 'stock_brand')
+                    if(in_array($field,['measure_code','stock_daily_use','stock_brand']))
                         $sup->where("master.master_stock.".$field,($val=="null"?NULL:$val));
                     else if($field == 'find'){
                         if(!empty($val)){
