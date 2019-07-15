@@ -64,6 +64,11 @@ CREATE TABLE [master].[master_measure](
 	[measure_type] [varchar](50) NULL
 ) ON [PRIMARY]
 GO
+CREATE TABLE [master].[master_category](
+	[category_code] [varchar](5) NOT NULL,
+	[category_name] [varchar](50) NOT NULL
+) ON [PRIMARY]
+GO
 CREATE TABLE [master].[master_stock](
 	[stock_code] [varchar](10) NOT NULL,
 	[stock_name] [varchar](50) NULL,
@@ -268,7 +273,8 @@ INSERT INTO [master].[master_menu](id_menu,menu_page, menu_name, menu_url,menu_i
 (12, 'wh', 'Stok', '/stk/stock', 'fa fa-boxes', 10),
 (13, 'wh', 'Riwayat', '/stk/history', 'fa fa-file-alt', 10),
 (14, 'wh', 'Barang', '/req/tools', 'fa fa-hammer', 2),
-(15, 'wh', 'Satuan', '/mst/measure', 'fa fa-balance-scale', 5)
+(15, 'wh', 'Satuan', '/mst/measure', 'fa fa-balance-scale', 5),
+(16, 'wh', 'Kategory', '/mst/category', 'fa fa-box-open', 5)
 GO
 INSERT INTO [master].[master_company](company_code,company_name) VALUES('CP01','Sarana Makin Mulia, PT.')
 GO
@@ -298,7 +304,8 @@ INSERT INTO [account].[user_menu](company_code, department_code, division_code, 
 ('CP01', 'SMDP01', 'SMDV01', 12),
 ('CP01', 'SMDP01', 'SMDV01', 13),
 ('CP01', 'SMDP01', 'SMDV01', 14),
-('CP01', 'SMDP01', 'SMDV01', 15)
+('CP01', 'SMDP01', 'SMDV01', 15),
+('CP01', 'SMDP01', 'SMDV01', 16)
 GO
 INSERT INTO [account].[user](nik,pwd_hash,company_code,department_code,division_code,status_code) VALUES('SMM01001', '$2y$12$rbfkWNlw4gj7.OxIm80UsOte/uvI9Cb3Ndn6/TlGHty5LtT3N49vW', 'CP01', 'SMDP01', 'SMDV01', 'ST01'),('SMM01002', '$2y$12$rbfkWNlw4gj7.OxIm80UsOte/uvI9Cb3Ndn6/TlGHty5LtT3N49vW', 'CP01', 'SMDP01', 'SMDV02', 'ST01')
 GO

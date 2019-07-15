@@ -40,6 +40,16 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
             $router->post('delete', 'Master\MeasureController@delete');
         });
 
+        // master category group
+        $router->group(['prefix'=>'category'], function() use($router){
+            $router->get('/','Master\CategoryController@index');
+            $router->get('find/{id}', 'Master\CategoryController@find');
+            $router->post('grid','Master\CategoryController@grid');
+            $router->post('add', 'Master\CategoryController@add');
+            $router->post('edit', 'Master\CategoryController@edit');
+            $router->post('delete', 'Master\CategoryController@delete');
+        });
+
         // master Stock group
         $router->group(['prefix'=>'stock'], function() use($router){
             $router->get('/','Master\StockController@index');

@@ -44,9 +44,8 @@ class StockController extends Controller
         return $prefix.sprintf("%07d",$count);
     }
 
-    private function _generate_master_prefix(){
-        $prefix = "STK";
-        $SP = MasterStock::select('stock_code')->orderBy('stock_code', 'DESC')->get();
+    private function _generate_master_prefix($prefix = "STK"){
+        $SP = MasterStock::select('stock_code')->where('stock_code','LIKE',$prefix.'%')->orderBy('stock_code', 'DESC')->get();
         if($SP->count() > 0){
             $SP = $SP->first();
             $tmp = explode($prefix, $SP->stock_code);
@@ -86,7 +85,7 @@ class StockController extends Controller
 
     public function add_master($r){
         $stock = new MasterStock;
-        $stock->stock_code = $this->_generate_master_prefix();
+        $stock->stock_code = $this->_generate_master_prefix($r->category_code);
         $stock->stock_name = $r->input('stock_name');
         $stock->stock_size = $r->input('stock_size');
         $stock->stock_brand = $r->input('stock_brand');
@@ -134,118 +133,10 @@ class StockController extends Controller
                 'stock_type' => $r->input('stock_type'),
                 'stock_color' => $r->input('stock_color'),
                 'measure_code' => $r->input('measure_code'),
-                'stock_price' => $r->input('stock_price'),
-                'stock_deliver_price' => $r->input('stock_deliver_price'),
                 'stock_min_qty' => $r->input('stock_min_qty'),
                 'stock_max_qty' => $r->input('stock_max_qty'),
                 'stock_daily_use' => $r->has('stock_daily_use')?1:0
             ]);
-
-            $qty  = Stock::selectRaw("CAST(SUM(qty) AS DECIMAL(20,2)) as stock_qty, stock.stock.main_stock_code")
-            ->leftJoin('stock.qty','stock.qty.main_stock_code','=','stock.stock.main_stock_code')
-            ->where(['stock_code' => $r->input('stock_code'), 'menu_page' =>$r->input('menu_page')])->groupBy('stock.stock.main_stock_code')->first();
-            if((float)$qty->stock_qty !== (float)$r->input('stock_qty')){
-
-                if((float)$qty->stock_qty > 0){
-                    // balancing to 0
-                    $qtyNew = new Qty;
-                    $qtyNew->main_stock_code = $qty->main_stock_code;
-                    $qtyNew->qty = (0-$qty->stock_qty);
-                    $qtyNew->supplier_code = "SPLR0";
-                    $qtyNew->stock_notes = 'Edit Stock (Balancing)';
-                    $qtyNew->nik = $r->input('nik');
-                    $qtyNew->save();
-                }
-
-                // New Qty
-                $qtyNew = new Qty;
-                $qtyNew->main_stock_code = $qty->main_stock_code;
-                $qtyNew->qty = $r->input('stock_qty');
-                $qtyNew->supplier_code = "SPLR0";
-                $qtyNew->stock_notes = 'Edit Stock (New Qty)';
-                $qtyNew->nik = $r->input('nik');
-                $qtyNew->save();
-
-
-                // change status in waiting list
-                $sts = DB::select(DB::raw("SELECT stock_code, sum(stock_qty) as qty FROM (
-                    SELECT stock.stock.stock_code, SUM(qty) as stock_qty FROM stock.qty
-                    INNER JOIN stock.stock ON stock.stock.main_stock_code = stock.qty.main_stock_code
-                    WHERE stock.stock.menu_page='".$r->menu_page."'
-                    GROUP BY stock_code
-                    UNION
-                    SELECT stock_code, (0-req_tools_qty) as stock_qty FROM document.request_tools_detail
-                    INNER JOIN document.request_tools ON document.request_tools_detail.req_tools_code = document.request_tools.req_tools_code 
-                    WHERE fullfillment = 1 AND document.request_tools.menu_page='".$r->menu_page."' AND document.request_tools_detail.finish_by IS NULL
-                ) AS stock_table WHERE stock_code='".$r->stock_code."' GROUP BY stock_code"));
-                if(count($sts) > 0){
-
-                    // revert waiting list
-                    if($sts[0]->qty < 0){
-                        $last_qty = DB::select(DB::raw("SELECT stock_code, sum(stock_qty) as qty FROM (
-                            SELECT stock.stock.stock_code, SUM(qty) as stock_qty FROM stock.qty
-                            INNER JOIN stock.stock ON stock.stock.main_stock_code = stock.qty.main_stock_code
-                            WHERE stock.stock.menu_page='".$r->menu_page."'
-                            GROUP BY stock_code
-                        ) AS stock_table WHERE stock_code='".$r->stock_code."' GROUP BY stock_code"))[0]->qty;
-
-                        $waiting_list = DB::select(DB::raw("SELECT document.request_tools_detail.req_tools_code, stock_code, req_tools_qty as stock_qty FROM document.request_tools_detail
-                            INNER JOIN document.request_tools ON document.request_tools_detail.req_tools_code = document.request_tools.req_tools_code 
-                            WHERE fullfillment = 1 AND stock_code='".$r->stock_code."' AND document.request_tools.menu_page='".$r->menu_page."' AND document.request_tools_detail.finish_by IS NULL ORDER BY document.request_tools.create_date ASC"));
-                        if(count($waiting_list) > 0){
-                            foreach($waiting_list AS $row){
-                                if(($last_qty - $row->stock_qty) < 0){
-                                    ReqToolsDetail::where([
-                                        'req_tools_code' => $row->req_tools_code,
-                                        'stock_code' => $row->stock_code
-                                    ])->update(['fullfillment' => 0]);
-                                }
-                                $last_qty -= $row->stock_qty;
-                            }
-                        }
-                    } else {
-                        $waiting_list = DB::select(DB::raw("SELECT document.request_tools_detail.req_tools_code, stock_code, req_tools_qty as stock_qty FROM document.request_tools_detail
-                            INNER JOIN document.request_tools ON document.request_tools_detail.req_tools_code = document.request_tools.req_tools_code 
-                            WHERE fullfillment = 0 AND stock_code='".$r->stock_code."' AND document.request_tools.menu_page='".$r->menu_page."'
-                            ORDER BY document.request_tools.create_date ASC"));
-                        if(count($waiting_list) > 0){
-                            foreach($waiting_list AS $row){
-                                if(($sts[0]->qty - $row->stock_qty) >= 0){
-                                    ReqToolsDetail::where([
-                                        'req_tools_code' => $row->req_tools_code,
-                                        'stock_code' => $row->stock_code
-                                    ])->update(['fullfillment' => 1]);
-                                }
-                                $sts[0]->qty -= $row->stock_qty;
-                                // break process if qty <= 0
-                                if($sts[0]->qty <= 0)
-                                    break;
-                            }
-                        }
-                    }
-                }
-
-                // sync status for master waiting list
-                    $sts_wait = DB::select(DB::raw("SELECT document.request_tools.req_tools_code, document.request_tools.status, 
-                        SUM(CAST(fullfillment AS INT)) AS fully, 
-                        COUNT(document.request_tools_detail.req_tools_code) AS count_stock 
-                    FROM document.request_tools_detail
-                    INNER JOIN document.request_tools ON document.request_tools_detail.req_tools_code = document.request_tools.req_tools_code 
-                    WHERE document.request_tools.menu_page='".$r->menu_page."'
-                        AND status IN('ST02','ST03')
-                    GROUP BY document.request_tools.req_tools_code, document.request_tools.status, document.request_tools.create_date
-                    ORDER BY document.request_tools.create_date ASC"));
-                if(count($sts_wait) > 0){
-                    foreach($sts_wait as $row){
-                        ReqTools::where([
-                            'req_tools_code' => $row->req_tools_code
-                        ])->update([
-                            'status' => ($row->fully == $row->count_stock? "ST02" : "ST03")
-                        ]);
-                    }
-                }
-                // end change status
-            }
         } else 
             return response()->json(Api::response(false,"Data stok tidak ada"),200);
 
