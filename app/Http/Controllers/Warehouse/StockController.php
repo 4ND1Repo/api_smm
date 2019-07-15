@@ -183,7 +183,6 @@ class StockController extends Controller
             'cabinet.cabinet_name',
             'master.master_measure.measure_type',
             'qty.stock_qty',
-            'qty.stock_price',
             'stock_min_qty',
             'stock_max_qty'
         ];
@@ -196,11 +195,11 @@ class StockController extends Controller
             );
 
         // whole query
-        $sup = Stock::selectRaw('stock.stock.main_stock_code, master.master_stock.*, master.master_measure.measure_type, qty.stock_qty, qty.stock_price, cabinet.cabinet_name')
+        $sup = Stock::selectRaw('stock.stock.main_stock_code, master.master_stock.*, master.master_measure.measure_type, qty.stock_qty, cabinet.cabinet_name')
         ->join('master.master_stock','master.master_stock.stock_code','=','stock.stock.stock_code')
         ->join('master.master_measure','master.master_measure.measure_code','=','master.master_stock.measure_code')
         ->leftJoin(DB::raw("(SELECT main_stock_code, cabinet_name FROM stock.cabinet LEFT JOIN master.master_cabinet ON master.master_cabinet.cabinet_code = stock.cabinet.cabinet_code WHERE master.master_cabinet.menu_page = '".$input['menu_page']."') AS cabinet"),'cabinet.main_stock_code','=','stock.stock.main_stock_code')
-        ->leftJoin(DB::raw("(SELECT DISTINCT main_stock_code, SUM(qty) AS stock_qty, stock_price FROM stock.qty GROUP BY main_stock_code, stock_price ) AS qty"),'qty.main_stock_code','=','stock.stock.main_stock_code')
+        ->leftJoin(DB::raw("(SELECT DISTINCT main_stock_code, SUM(qty) AS stock_qty FROM stock.qty GROUP BY main_stock_code ) AS qty"),'qty.main_stock_code','=','stock.stock.main_stock_code')
         ->where(['stock.stock.menu_page' => $input['menu_page']]);
 
         // where condition
