@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Model\Master\StockModel AS MasterStock;
 use App\Model\Stock\StockModel AS Stock;
 use App\Model\Stock\QtyModel AS Qty;
+use App\Model\Stock\QtyOutModel AS QtyOut;
 use App\Model\Document\RequestToolsModel AS ReqTools;
 use App\Model\Document\RequestToolsDetailModel AS ReqToolsDetail;
 
@@ -77,7 +78,7 @@ class StockController extends Controller
     public function find($id){
         $data = Stock::selectRaw('stock.stock.main_stock_code, master.master_stock.*, qty.stock_qty')
         ->join('master.master_stock','master.master_stock.stock_code','=','stock.stock.stock_code')
-        ->join(DB::raw("(SELECT DISTINCT main_stock_code, SUM(qty) AS stock_qty FROM stock.qty GROUP BY main_stock_code ) AS qty"),'qty.main_stock_code','=','stock.stock.main_stock_code')
+        ->leftJoin(DB::raw("(SELECT DISTINCT main_stock_code, SUM(qty) AS stock_qty FROM stock.qty GROUP BY main_stock_code ) AS qty"),'qty.main_stock_code','=','stock.stock.main_stock_code')
         ->where('stock.stock.main_stock_code',$id)
         ->first();
         return Api::response(true,"Sukses",$data);
@@ -92,8 +93,6 @@ class StockController extends Controller
         $stock->stock_type = $r->input('stock_type');
         $stock->stock_color = $r->input('stock_color');
         $stock->measure_code = $r->input('measure_code');
-        $stock->stock_price = $r->input('stock_price')?$r->input('stock_price'):0;
-        $stock->stock_deliver_price = $r->input('stock_deliver_price')?$r->input('stock_deliver_price'):0;
         $stock->stock_min_qty = $r->input('stock_min_qty')?$r->input('stock_min_qty'):0;
         $stock->stock_max_qty = $r->input('stock_max_qty')?$r->input('stock_max_qty'):0;
         $stock->stock_daily_use = $r->has('stock_daily_use')?1:0;
@@ -115,15 +114,6 @@ class StockController extends Controller
                 $stk->main_stock_code = $this->_generate_prefix();
                 $stk->nik = $r->nik;
                 $stk->save();
-            }
-
-            $qty = Qty::firstOrNew(['main_stock_code'=>$stk->main_stock_code]);
-            if(! $qty->exists){
-                $qty->main_stock_code = $stk->main_stock_code;
-                $qty->qty = !is_null($r->stock_qty) && !empty($r->stock_qty)?$r->stock_qty:0;
-                $qty->nik = $r->nik;
-                $qty->stock_notes = "New Stock";
-                $qty->save();
             } else 
                 return response()->json(Api::response(false,'Stock sudah tersedia'),200);
 
@@ -150,8 +140,9 @@ class StockController extends Controller
                 'stock_max_qty' => $r->input('stock_max_qty'),
                 'stock_daily_use' => $r->has('stock_daily_use')?1:0
             ]);
-            $qty = Qty::selectRaw('CAST(SUM(qty) AS DECIMAL(20,2)) as stock_qty, stock.stock.main_stock_code')
-            ->join('stock.stock', 'stock.stock.main_stock_code', '=', 'stock.qty.main_stock_code')
+
+            $qty  = Stock::selectRaw("CAST(SUM(qty) AS DECIMAL(20,2)) as stock_qty, stock.stock.main_stock_code")
+            ->leftJoin('stock.qty','stock.qty.main_stock_code','=','stock.stock.main_stock_code')
             ->where(['stock_code' => $r->input('stock_code'), 'menu_page' =>$r->input('menu_page')])->groupBy('stock.stock.main_stock_code')->first();
             if((float)$qty->stock_qty !== (float)$r->input('stock_qty')){
 
@@ -160,6 +151,7 @@ class StockController extends Controller
                     $qtyNew = new Qty;
                     $qtyNew->main_stock_code = $qty->main_stock_code;
                     $qtyNew->qty = (0-$qty->stock_qty);
+                    $qtyNew->supplier_code = "SPLR0";
                     $qtyNew->stock_notes = 'Edit Stock (Balancing)';
                     $qtyNew->nik = $r->input('nik');
                     $qtyNew->save();
@@ -169,6 +161,7 @@ class StockController extends Controller
                 $qtyNew = new Qty;
                 $qtyNew->main_stock_code = $qty->main_stock_code;
                 $qtyNew->qty = $r->input('stock_qty');
+                $qtyNew->supplier_code = "SPLR0";
                 $qtyNew->stock_notes = 'Edit Stock (New Qty)';
                 $qtyNew->nik = $r->input('nik');
                 $qtyNew->save();
@@ -296,6 +289,7 @@ class StockController extends Controller
             'stock_brand',
             'stock_type',
             'stock_color',
+            'cabinet.cabinet_name',
             'master.master_measure.measure_type',
             'qty.stock_qty',
             'stock_price',
@@ -311,10 +305,11 @@ class StockController extends Controller
             );
 
         // whole query
-        $sup = Stock::selectRaw('stock.stock.main_stock_code, master.master_stock.*, master.master_measure.measure_type, qty.stock_qty')
+        $sup = Stock::selectRaw('stock.stock.main_stock_code, master.master_stock.*, master.master_measure.measure_type, qty.stock_qty, cabinet.cabinet_name')
         ->join('master.master_stock','master.master_stock.stock_code','=','stock.stock.stock_code')
         ->join('master.master_measure','master.master_measure.measure_code','=','master.master_stock.measure_code')
-        ->join(DB::raw("(SELECT DISTINCT main_stock_code, SUM(qty) AS stock_qty FROM stock.qty GROUP BY main_stock_code ) AS qty"),'qty.main_stock_code','=','stock.stock.main_stock_code')
+        ->leftJoin(DB::raw("(SELECT main_stock_code, cabinet_name FROM stock.cabinet LEFT JOIN master.master_cabinet ON master.master_cabinet.cabinet_code = stock.cabinet.cabinet_code WHERE master.master_cabinet.menu_page = '".$input['menu_page']."') AS cabinet"),'cabinet.main_stock_code','=','stock.stock.main_stock_code')
+        ->leftJoin(DB::raw("(SELECT DISTINCT main_stock_code, SUM(qty) AS stock_qty FROM stock.qty GROUP BY main_stock_code ) AS qty"),'qty.main_stock_code','=','stock.stock.main_stock_code')
         ->where(['stock.stock.menu_page' => $input['menu_page']]);
 
         // where condition
@@ -379,9 +374,10 @@ class StockController extends Controller
             'master.master_stock.stock_color',
             'master.master_measure.measure_type',
             'stock.qty.qty',
-            'master.master_stock.stock_price',
+            'stock.qty.stock_price',
             'master.master_stock.stock_min_qty',
-            'master.master_stock.stock_max_qty'
+            'master.master_stock.stock_max_qty',
+            'master.master_supplier.supplier_name'
         ];
 
         // generate default
@@ -392,10 +388,25 @@ class StockController extends Controller
             );
 
         // whole query
-        $sup = Qty::selectRaw('stock.qty.stock_notes, stock.qty.nik, stock.qty.stock_date, stock.qty.main_stock_code, master.master_stock.*, master.master_measure.measure_type, stock.qty.qty AS stock_qty')
+        $sup = Qty::selectRaw('stock.qty.stock_notes, stock.qty.nik, stock.qty.stock_date, stock.qty.stock_price, master.master_supplier.supplier_name, stock.qty.main_stock_code, master.master_stock.*, master.master_measure.measure_type, (stock.qty.qty + CASE WHEN (
+            SELECT TOP 1 ISNULL(SUM(qty),0) FROM stock.qty_out WHERE 
+                main_stock_code=stock.qty.main_stock_code
+                AND stock_price=stock.qty.stock_price
+                AND stock_date=stock.qty.stock_date
+                AND supplier_code=stock.qty.supplier_code
+            GROUP BY main_stock_code, stock_price, stock_date, supplier_code
+            ) IS NOT NULL THEN (
+                SELECT TOP 1 ISNULL(SUM(qty),0) FROM stock.qty_out WHERE 
+                    main_stock_code=stock.qty.main_stock_code
+                    AND stock_price=stock.qty.stock_price
+                    AND stock_date=stock.qty.stock_date
+                    AND supplier_code=stock.qty.supplier_code
+                GROUP BY main_stock_code, stock_price, stock_date, supplier_code
+                ) ELSE 0 END) AS stock_qty')
         ->join('stock.stock', 'stock.stock.main_stock_code', '=', 'stock.qty.main_stock_code')
         ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code')
         ->join('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
+        ->leftJoin('master.master_supplier', 'master.master_supplier.supplier_code', '=', 'stock.qty.supplier_code')
         ->where(['stock.stock.menu_page' => $input['menu_page']]);
 
         // where condition
@@ -427,7 +438,89 @@ class StockController extends Controller
         $sup->skip($skip);
         if(!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))
             $sup->take($input['pagination']['perpage']);
-        $sup->get();
+
+
+        $row = $sup->get();
+        $data = [
+            "meta"=> [
+                "page"=> $input['pagination']['page'],
+                "pages"=> $pages,
+                "perpage"=> (!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))?$input['pagination']['perpage']:-1,
+                "total"=> $count_all,
+                "sort"=> $input['sort']['sort'],
+                "field"=> $input['sort']['field']
+            ],
+            "data"=> $row
+        ];
+
+        return response()->json($data,200);
+    }
+
+    public function history_out(Request $r){
+        // collect data from post
+        $input = $r->input();
+
+        $column_search = [
+            'stock.stock.stock_code',
+            'stock.qty_out.nik',
+            'stock.qty_out.stock_notes',
+            'master.master_stock.stock_name',
+            'master.master_stock.stock_size',
+            'master.master_stock.stock_brand',
+            'master.master_stock.stock_type',
+            'master.master_stock.stock_color',
+            'master.master_measure.measure_type',
+            'stock.qty_out.qty',
+            'stock.qty_out.stock_price',
+            'master.master_stock.stock_min_qty',
+            'master.master_stock.stock_max_qty',
+            'master.master_supplier.supplier_name'
+        ];
+
+        // generate default
+        if(!isset($input['sort']))
+            $input['sort'] = array(
+                'sort' => 'asc',
+                'field' => 'stock_name'
+            );
+
+        // whole query
+        $sup = QtyOut::selectRaw('stock.qty_out.stock_notes, stock.qty_out.nik, stock.qty_out.stock_date, stock.qty_out.stock_out_date, stock.qty_out.stock_price, master.master_supplier.supplier_name, stock.qty_out.main_stock_code, master.master_stock.*, master.master_measure.measure_type, stock.qty_out.qty AS stock_qty')
+        ->join('stock.stock', 'stock.stock.main_stock_code', '=', 'stock.qty_out.main_stock_code')
+        ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code')
+        ->join('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
+        ->leftJoin('master.master_supplier', 'master.master_supplier.supplier_code', '=', 'stock.qty_out.supplier_code')
+        ->where(['stock.stock.menu_page' => $input['menu_page']]);
+
+        // where condition
+        if(isset($input['query'])){
+            if(!is_null($input['query']) and !empty($input['query'])){
+                foreach($input['query'] as $field => $val){
+                    if(in_array($field, array('measure_code','stock_brand','stock_daily_use')))
+                        $sup->where("master.master_stock.".$field,($val=="null"?NULL:$val));
+                    else if($field == 'find'){
+                        if(!empty($val)){
+                            $sup->where(function($sup) use($column_search,$val){
+                                foreach($column_search as $row)
+                                    $sup->orWhere($row,'like',"%".$val."%");
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        // $sup->where();
+        $count_all = $sup->count();
+        // get total page from count all
+        $pages = (!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))? ceil($count_all/$input['pagination']['perpage']):1;
+        
+        $sup->orderBy($input['sort']['field'],$input['sort']['sort']);
+
+        // skipping for next page
+        $skip = (!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))?($input['pagination']['page']-1)*$input['pagination']['perpage']:0;
+        $sup->skip($skip);
+        if(!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))
+            $sup->take($input['pagination']['perpage']);
 
         $row = $sup->get();
         $data = [

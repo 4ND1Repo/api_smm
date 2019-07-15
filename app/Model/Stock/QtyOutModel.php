@@ -4,9 +4,9 @@ namespace App\Model\Stock;
 
 use Illuminate\Database\Eloquent\Model;
 
-class QtyModel extends Model {
+class QtyOutModel extends Model {
 
-    protected $table = 'stock.qty';
+    protected $table = 'stock.qty_out';
     // protected $primaryKey = 'id_authorization_company';
 
     protected $fillable = [

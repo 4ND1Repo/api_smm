@@ -122,19 +122,14 @@ class RequestController extends Controller
 
     public function send_tools(Request $r){
         $data = [];
+        $notes = "Pengeluaran Stock";
         // get data sended stock
         $stock = ReqToolsDetail::selectRaw('document.request_tools.req_tools_code, stock_code, menu_page, req_tools_qty, (SELECT TOP 1 main_stock_code FROM stock.stock WHERE stock_code = document.request_tools_detail.stock_code AND menu_page = document.request_tools.menu_page) as main_stock_code')
                 ->join('document.request_tools', 'document.request_tools.req_tools_code', '=', 'document.request_tools_detail.req_tools_code')
                 ->where(['stock_code' => $r->stock_code, 'document.request_tools.req_tools_code' => $r->req_tools_code])->first();
 
-        // send minus stock to stock.qty
-        $qty = new Qty;
-        $qty->main_stock_code = $stock->main_stock_code;
-        $qty->stock_notes = 'Pengeluaran Gudang';
-        $qty->nik = $r->nik;
-        $qty->po_code = $stock->req_tools_code;
-        $qty->qty = 0-$stock->req_tools_qty;
-        if($qty->save()){
+        $qty = DB::select("EXEC stock.stock_out @stcode='".$r->stock_code."', @qty=".$stock->req_tools_qty.", @nik='".$r->nik."', @page='".$stock->menu_page."', @notes='".$notes."'");
+        if(count($qty) > 0){
             // flag finish stock in document.request_tools_detail
             $drtd = ReqToolsDetail::where(['req_tools_code' => $stock->req_tools_code, 'stock_code' => $stock->stock_code])->update(['finish_by' => $r->nik, 'finish_date' => date('Y-m-d H:i:s')]);
 

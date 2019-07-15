@@ -56,9 +56,11 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
         $router->group(['prefix'=>'cabinet'], function() use($router){
             $router->get('/','Master\CabinetController@index');
             $router->get('get','Master\CabinetController@get');
-            $router->get('get/{ty}','Master\CabinetController@get');
+            $router->get('get/{p}','Master\CabinetController@get');
             $router->post('add','Master\CabinetController@add');
             $router->post('delete','Master\CabinetController@delete');
+            $router->get('tree','Master\CabinetController@tree');
+            $router->get('tree_child','Master\CabinetController@tree_child');
         });
 
         // get Supplier data
@@ -120,6 +122,7 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
             $router->post('autocomplete', 'Warehouse\StockController@autocomplete');
             $router->post('grid','Warehouse\StockController@grid');
             $router->post('history','Warehouse\StockController@history');
+            $router->post('history_out','Warehouse\StockController@history_out');
 
             // warehouse stock cabinet 
             $router->group(['prefix' => 'cabinet'], function() use($router){

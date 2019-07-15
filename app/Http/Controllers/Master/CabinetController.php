@@ -43,8 +43,8 @@ class CabinetController extends Controller
         return response()->json(Api::response(true,"Sukses",Cabinet::all()),200);
     }
 
-    public function get(Request $r, $ty=NULL){
-        return response()->json(Api::response(true,"Sukses",Cabinet::where(['menu_page' => $ty])->get()),200);
+    public function get(Request $r, $p=NULL){
+        return response()->json(Api::response(true,"Sukses",Cabinet::where(['menu_page' => $p])->get()),200);
     }
 
     public function add(Request $r){
@@ -52,10 +52,17 @@ class CabinetController extends Controller
             $cab = new Cabinet;
             $cab->cabinet_code = $this->__generate_code();
             $cab->cabinet_name = $r->cabinet_name;
+            $cab->parent_cabinet_code = $r->has('parent_cabinet_code')?(!empty($r->parent_cabinet_code)?$r->parent_cabinet_code:NULL):NULL;
             $cab->cabinet_description = $r->cabinet_description;
+            $cab->is_child = 1;
             $cab->menu_page = $r->menu_page;
-            if($cab->save())
+            if($cab->save()){
+                if($r->has('parent_cabinet_code')){
+                    if(!empty($r->parent_cabinet_code))
+                        $pCab = Cabinet::where(['cabinet_code' => $r->parent_cabinet_code])->update(['is_child' => 0]);
+                }
                 return response()->json(Api::response(true,"Sukses"),200);
+            }
             
             return response()->json(Api::response(false,"Gagal"),200);
         }
@@ -63,9 +70,63 @@ class CabinetController extends Controller
     }
 
     public function delete(Request $r){
-        Cabinet::where(['cabinet_code' => $r->cabinet_code])->delete();
         MainCabinet::where(['cabinet_code' => $r->cabinet_code, 'menu_page' => $r->menu_page])->delete();
+        $cb = Cabinet::where(['cabinet_code' => $r->cabinet_code])->first()->toArray();
+        $sts = Cabinet::where(['cabinet_code' => $r->cabinet_code])->delete();
+        if($sts){
+            // if parent not null
+            if(!is_null($cb['parent_cabinet_code'])){
+                // check child parent is null
+                $cbt = Cabinet::where(['parent_cabinet_code' => $cb['parent_cabinet_code'], 'menu_page' => $r->menu_page])->get();
+                if($cbt->count() == 0)
+                    Cabinet::where(['cabinet_code' => $cb['parent_cabinet_code'], 'menu_page' => $r->menu_page])->update(['is_child' => 1]);
+            }
+        }
+        
         return response()->json(Api::response(true,"Sukses"),200);
+    }
+
+    public function tree(Request $r){
+        $data = [];
+
+        $cb = Cabinet::where(['parent_cabinet_code' => ($r->parent == "#")?NULL:$r->parent, 'menu_page' => $r->p])->orderBy('cabinet_name','ASC')->get();
+        if($cb->count() > 0){
+            foreach($cb AS $row){
+                // check has child
+                $cnt = Cabinet::where(['parent_cabinet_code' => $row->cabinet_code, 'is_child' => 0])->count();
+                $tmp = [
+                    'id' => $row->cabinet_code,
+                    'icon' => $row->is_child == 1? 'fa fa-box kt-font-success':'fa fa-folder icon-lg kt-font-warning',
+                    'text' => $row->cabinet_name,
+                    'children' => ($cnt > 0),
+                    'a_attr' => [
+                        'href' => $row->cabinet_code
+                    ]
+                ];
+
+                if(!is_null($row->cabinet_description) && !empty($row->cabinet_description)){
+                    $tmp['a_attr']['title'] = $row->cabinet_description;
+                }
+
+                if($row->is_child == 1){
+                    $tmp['a_attr']['data-toggle'] = 'modal';
+                    $tmp['a_attr']['data-target'] = '#listStockModal';
+                }
+                $data[] = $tmp;
+            }
+        }
+        return response()->json($data,200);
+    }
+
+    public function tree_child(Request $r){
+        $data = [];
+
+        $cb = Cabinet::where(['parent_cabinet_code' => $r->parent, 'is_child' => 1])->orderBy('cabinet_name','ASC')->get();
+        if($cb->count() > 0){
+            $chunk = $cb->toArray();
+            $data = array_chunk($chunk,$r->cnt);
+        }
+        return response()->json($data,200);
     }
 
 }

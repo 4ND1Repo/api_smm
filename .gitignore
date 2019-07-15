@@ -15,6 +15,9 @@
 !app/Model/*/*/*/*/*
 !app/Helpers
 !app/Helpers/*
+!database
+!database/raw
+!database/raw/*
 !conf
 !conf/*
 !routes

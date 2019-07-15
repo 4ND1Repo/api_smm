@@ -60,8 +60,6 @@ class StockController extends Controller
         $stock->stock_type = $r->input('stock_type');
         $stock->stock_color = $r->input('stock_color');
         $stock->measure_code = $r->input('measure_code');
-        $stock->stock_price = $r->input('stock_price')?$r->input('stock_price'):0;
-        $stock->stock_deliver_price = $r->input('stock_deliver_price')?$r->input('stock_deliver_price'):0;
         $stock->stock_min_qty = $r->input('stock_min_qty')?$r->input('stock_min_qty'):0;
         $stock->stock_max_qty = $r->input('stock_max_qty')?$r->input('stock_max_qty'):0;
         $stock->stock_daily_use = $r->has('stock_daily_use')?1:0;
