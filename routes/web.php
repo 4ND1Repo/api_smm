@@ -81,6 +81,7 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
             $router->post('add', 'Master\SupplierController@add');
             $router->post('edit', 'Master\SupplierController@edit');
             $router->post('delete', 'Master\SupplierController@delete');
+            $router->post('autocomplete', 'Master\SupplierController@autocomplete');
         });
     });
 
@@ -94,6 +95,19 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
 
 
 
+    // Purchasing Group
+    $router->group(['prefix' => 'pur'], function() use($router){
+
+        // request group
+        $router->group(['prefix' => 'req'], function() use($router){
+            // Purchase Order group
+            $router->group(['prefix' => 'po'], function() use($router){
+                $router->get('find/{id}','Purchasing\PoController@find');
+                $router->post('process', 'Purchasing\PoController@process');
+                $router->post('grid', 'Purchasing\PoController@grid');
+            });
+        });
+    });
 
 
 
@@ -121,11 +135,27 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
                 $router->post('grid','Document\RequestController@grid_tools');
                 $router->post('send','Document\RequestController@send_tools');
             });
+
+            // request Purchase Order Group
+            $router->group(['prefix' => 'po'], function() use($router){
+                $router->get('find/{id}','Document\RequestController@find_po');
+                $router->post('add','Document\RequestController@add_po');
+                $router->post('delete','Document\RequestController@delete_po');
+                $router->post('grid','Document\RequestController@grid_po');
+            });
+
+            // request Delivery Order Group
+            $router->group(['prefix' => 'do'], function() use($router){
+                $router->get('find/{id}','Document\RequestController@find_do');
+                $router->post('add','Document\RequestController@add_do');
+                $router->post('delete','Document\RequestController@delete_do');
+                $router->post('grid','Document\RequestController@grid_do');
+            });
         });
 
         // Warehouse Stock group
         $router->group(['prefix' => 'stock'], function() use($router){
-            // add stock 
+            // add stock
             $router->get('find/{id}', 'Warehouse\StockController@find');
             $router->post('add', 'Warehouse\StockController@add');
             $router->post('edit', 'Warehouse\StockController@edit');
@@ -134,14 +164,18 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
             $router->post('history','Warehouse\StockController@history');
             $router->post('history_out','Warehouse\StockController@history_out');
 
-            // warehouse stock cabinet 
+            // warehouse stock cabinet
             $router->group(['prefix' => 'cabinet'], function() use($router){
                 $router->post('add', 'Warehouse\CabinetController@add');
                 $router->post('delete', 'Warehouse\CabinetController@delete');
                 $router->post('grid', 'Warehouse\CabinetController@grid');
             });
 
-        }); 
+            // warehouse list buy stock
+            $router->group(['prefix' => 'list_buy'], function() use($router){
+                $router->post('grid', 'Warehouse\ListBuyController@grid');
+            });
+        });
     });
 
 });

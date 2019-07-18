@@ -69,7 +69,7 @@ class SupplierController extends Controller
                 'supplier_phone' => $r->input('supplier_phone'),
                 'supplier_address' => $r->input('supplier_address'),
                 'supplier_category' => $r->input('supplier_category'),
-                'city_code' => $r->input('city_code') 
+                'city_code' => $r->input('city_code')
             ]);
 
         return response()->json(Api::response(true,"Sukses"),200);
@@ -126,7 +126,7 @@ class SupplierController extends Controller
         $count_all = $sup->count();
         // get total page from count all
         $pages = (!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))? ceil($count_all/$input['pagination']['perpage']):1;
-        
+
         $sup->orderBy($input['sort']['field'],$input['sort']['sort']);
 
         // skipping for next page
@@ -150,6 +150,22 @@ class SupplierController extends Controller
         ];
 
         return response()->json($data,200);
+    }
+
+    public function autocomplete(Request $r){
+        $return = [];
+
+        $supplier = DB::select(DB::raw("SELECT * FROM (
+            SELECT supplier_code, (supplier_code + ' - ' + supplier_name) as supplier
+            FROM master.master_supplier) as supp WHERE supplier LIKE '%".$r->find."%'"));
+        if(count($supplier) > 0)
+            foreach($supplier as $row){
+                $return[] = [
+                    'id' => $row->supplier_code,
+                    'label' => $row->supplier
+                ];
+            }
+        return $return;
     }
 
 }
