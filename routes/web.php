@@ -161,6 +161,7 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
             $router->post('edit', 'Warehouse\StockController@edit');
             $router->post('autocomplete', 'Warehouse\StockController@autocomplete');
             $router->post('grid','Warehouse\StockController@grid');
+            $router->post('qty','Warehouse\StockController@qty');
             $router->post('history','Warehouse\StockController@history');
             $router->post('history_out','Warehouse\StockController@history_out');
 
@@ -174,6 +175,16 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
             // warehouse list buy stock
             $router->group(['prefix' => 'list_buy'], function() use($router){
                 $router->post('grid', 'Warehouse\ListBuyController@grid');
+            });
+
+            // warehouse stock opname
+            $router->group(['prefix' => 'opname'], function() use($router){
+                $router->get('find/{id}', 'Warehouse\OpnameController@find');
+                $router->get('date', 'Warehouse\OpnameController@date');
+                $router->post('add', 'Warehouse\OpnameController@add');
+                $router->post('grid', 'Warehouse\OpnameController@grid');
+                $router->post('approve', 'Warehouse\OpnameController@approve');
+                $router->post('reject', 'Warehouse\OpnameController@reject');
             });
         });
     });

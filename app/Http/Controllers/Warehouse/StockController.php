@@ -105,7 +105,7 @@ class StockController extends Controller
             $stock->first();
         else
             $stock = $this->add_master($r);
-        
+
         if(! $this->__check_data($r)){
 
             $stk = Stock::firstOrNew(['stock_code'=>$stock->stock_code, 'menu_page' => $r->menu_page]);
@@ -113,7 +113,7 @@ class StockController extends Controller
                 $stk->main_stock_code = $this->_generate_prefix();
                 $stk->nik = $r->nik;
                 $stk->save();
-            } else 
+            } else
                 return response()->json(Api::response(false,'Stock sudah tersedia'),200);
 
             return response()->json(Api::response(true,'Sukses'),200);
@@ -137,7 +137,7 @@ class StockController extends Controller
                 'stock_max_qty' => $r->input('stock_max_qty'),
                 'stock_daily_use' => $r->has('stock_daily_use')?1:0
             ]);
-        } else 
+        } else
             return response()->json(Api::response(false,"Data stok tidak ada"),200);
 
         return response()->json(Api::response(true,"Sukses"),200);
@@ -156,7 +156,7 @@ class StockController extends Controller
         // $stock = Stock::join('master.master_stock','master.master_stock.stock_code','=','stock.stock.stock_code');
         $stock = DB::select(DB::raw("SELECT * FROM (
             SELECT stock.stock.main_stock_code, (master.master_stock.stock_code + ' - ' + master.master_stock.stock_name + ' - ' + master.master_stock.stock_type + ' - ' + master.master_stock.stock_size) as stock_name
-            FROM stock.stock 
+            FROM stock.stock
             JOIN master.master_stock ON master.master_stock.stock_code = stock.stock.stock_code
         ) as stock WHERE stock_name LIKE '%".$r->find."%'"));
         if(count($stock) > 0)
@@ -223,7 +223,7 @@ class StockController extends Controller
         $count_all = $sup->count();
         // get total page from count all
         $pages = (!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))? ceil($count_all/$input['pagination']['perpage']):1;
-        
+
         $sup->orderBy($input['sort']['field'],$input['sort']['sort']);
 
         // skipping for next page
@@ -278,18 +278,18 @@ class StockController extends Controller
 
         // whole query
         $sup = Qty::selectRaw('stock.qty.stock_notes, stock.qty.nik, stock.qty.stock_date, stock.qty.stock_price, master.master_supplier.supplier_name, stock.qty.main_stock_code, master.master_stock.*, master.master_measure.measure_type, (stock.qty.qty + CASE WHEN (
-            SELECT TOP 1 ISNULL(SUM(qty),0) FROM stock.qty_out WHERE 
+            SELECT TOP 1 SUM(qty) FROM stock.qty_out WHERE
                 main_stock_code=stock.qty.main_stock_code
                 AND stock_price=stock.qty.stock_price
                 AND stock_date=stock.qty.stock_date
-                AND supplier_code=stock.qty.supplier_code
+                AND (supplier_code=stock.qty.supplier_code OR supplier_code IS NULL)
             GROUP BY main_stock_code, stock_price, stock_date, supplier_code
             ) IS NOT NULL THEN (
-                SELECT TOP 1 ISNULL(SUM(qty),0) FROM stock.qty_out WHERE 
+                SELECT TOP 1 SUM(qty) FROM stock.qty_out WHERE
                     main_stock_code=stock.qty.main_stock_code
                     AND stock_price=stock.qty.stock_price
                     AND stock_date=stock.qty.stock_date
-                    AND supplier_code=stock.qty.supplier_code
+                    AND (supplier_code=stock.qty.supplier_code OR supplier_code IS NULL)
                 GROUP BY main_stock_code, stock_price, stock_date, supplier_code
                 ) ELSE 0 END) AS stock_qty')
         ->join('stock.stock', 'stock.stock.main_stock_code', '=', 'stock.qty.main_stock_code')
@@ -319,7 +319,7 @@ class StockController extends Controller
         $count_all = $sup->count();
         // get total page from count all
         $pages = (!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))? ceil($count_all/$input['pagination']['perpage']):1;
-        
+
         $sup->orderBy($input['sort']['field'],$input['sort']['sort']);
 
         // skipping for next page
@@ -402,7 +402,7 @@ class StockController extends Controller
         $count_all = $sup->count();
         // get total page from count all
         $pages = (!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))? ceil($count_all/$input['pagination']['perpage']):1;
-        
+
         $sup->orderBy($input['sort']['field'],$input['sort']['sort']);
 
         // skipping for next page
@@ -425,6 +425,19 @@ class StockController extends Controller
         ];
 
         return response()->json($data,200);
+    }
+
+    public function qty(Request $r){
+        // collect data from post
+        $input = $r->input();
+
+        // whole query
+        $query = Stock::selectRaw('stock.stock.main_stock_code, qty.stock_qty')
+        ->leftJoin(DB::raw("(SELECT DISTINCT main_stock_code, SUM(qty) AS stock_qty FROM stock.qty GROUP BY main_stock_code ) AS qty"),'qty.main_stock_code','=','stock.stock.main_stock_code')
+        ->where(['stock.stock.menu_page' => $input['menu_page'], 'stock.stock.main_stock_code' => $input['main_stock_code']])->first();
+
+
+        return response()->json(Api::response(true,'Sukses',!is_null($query)?$query->stock_qty:0),200);
     }
 
 }

@@ -147,6 +147,20 @@ CREATE TABLE [stock].[qty_out](
 	[stock_notes] [varchar](255) NULL
 ) ON [PRIMARY]
 GO
+CREATE TABLE [stock].[opname](
+	[main_stock_code] [varchar](20) NOT NULL,
+	[opname_qty_from] [decimal](20,2) NOT NULL,
+	[opname_date_from] [date] NOT NULL DEFAULT(GETDATE()),
+	[opname_qty] [decimal](20,2) NOT NULL,
+	[opname_notes] [varchar](255) NULL,
+	[create_by] [VARCHAR](10) NOT NULL,
+	[create_date] [datetime] NOT NULL DEFAULT(GETDATE()),
+	[approve_by] [varchar](10) NULL,
+	[approve_date] [datetime] NULL,
+	[reject_by] [varchar](10) NULL,
+	[reject_date] [datetime] NULL
+) ON [PRIMARY]
+GO
 CREATE TABLE [stock].[cabinet](
 	[stock_cabinet_code] [varchar](10) NOT NULL,
 	[menu_page] [varchar](20) NOT NULL,
@@ -311,7 +325,7 @@ AS
 				-- insert all of stock into new stock out table
 				INSERT INTO [stock].[qty_out]([main_stock_code], [supplier_code], [stock_price], [stock_date], [qty], [nik], [stock_notes]) VALUES(@main_stock_code, @supplier_code, @stock_price, @stock_date, @stock_qty, @nik, @notes)
 				-- update to zero stock already
-				UPDATE [stock].[qty] SET [qty] = 0 WHERE [main_stock_code] = @main_stock_code AND [supplier_code] = @supplier_code AND [stock_price] = @stock_price AND [stock_date] = @stock_date
+				UPDATE [stock].[qty] SET [qty] = 0 WHERE [main_stock_code] = @main_stock_code AND ([supplier_code] = @supplier_code OR [supplier_code] IS NULL) AND [stock_price] = @stock_price AND [stock_date] = @stock_date
 				-- update stock needed leftovers
 				SET @qty = @qty - @stock_qty
 			END
@@ -320,7 +334,7 @@ AS
 				-- insert last stock needed to new stock out table
 				INSERT INTO [stock].[qty_out]([main_stock_code], [supplier_code], [stock_price], [stock_date], [qty], [nik], [stock_notes]) VALUES(@main_stock_code, @supplier_code, @stock_price, @stock_date, @qty, @nik, @notes)
 				-- update stock already
-				UPDATE [stock].[qty] SET [qty] = @stock_qty - @qty WHERE [main_stock_code] = @main_stock_code AND [supplier_code] = @supplier_code AND [stock_price] = @stock_price AND [stock_date] = @stock_date
+				UPDATE [stock].[qty] SET [qty] = @stock_qty - @qty WHERE [main_stock_code] = @main_stock_code AND ([supplier_code] = @supplier_code OR [supplier_code] IS NULL) AND [stock_price] = @stock_price AND [stock_date] = @stock_date
 				-- update stock needed leftovers
 				SET @qty = 0
 			END
@@ -387,7 +401,8 @@ INSERT INTO [master].[master_menu](id_menu,menu_page, menu_name, menu_url,menu_i
 (20, 'pur', 'Request', '/', 'fa fa-upload', NULL),
 (21, 'pur', 'Pembelian(PO)', '/req/po', 'fa fa-file', 20),
 (22, 'pur', 'Master', '/', 'fa fa-box', NULL),
-(23, 'pur', 'Supplier', '/mst/supplier', 'fa fa-users', 22)
+(23, 'pur', 'Supplier', '/mst/supplier', 'fa fa-users', 22),
+(24, 'wh', 'Stok Opname', '/stk/opname', 'fa fa-link', 10)
 GO
 INSERT INTO [master].[master_company](company_code,company_name) VALUES
 ('CP01','Sarana Makin Mulia, PT.')
@@ -426,7 +441,8 @@ INSERT INTO [account].[user_menu](company_code, department_code, division_code, 
 ('CP01', 'SMDP02', 'SMDV03', 20),
 ('CP01', 'SMDP02', 'SMDV03', 21),
 ('CP01', 'SMDP02', 'SMDV03', 22),
-('CP01', 'SMDP02', 'SMDV03', 23)
+('CP01', 'SMDP02', 'SMDV03', 23),
+('CP01', 'SMDP01', 'SMDV01', 24)
 GO
 INSERT INTO [account].[user](nik,pwd_hash,company_code,department_code,division_code,status_code) VALUES
 ('superuser', '$2y$12$rbfkWNlw4gj7.OxIm80UsOte/uvI9Cb3Ndn6/TlGHty5LtT3N49vW', 'CP01', NULL, NULL, 'ST01'),
