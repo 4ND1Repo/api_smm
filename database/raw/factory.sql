@@ -51,7 +51,7 @@ CREATE TABLE [document].[purchase_order](
 	[process_by] [varchar](10) NULL,
 	[process_date] [datetime] NULL,
 	[finish_by] [varchar](10) NULL,
-	[finish_date] [datetime] NOT NULL
+	[finish_date] [datetime] NULL
 ) ON [PRIMARY]
 GO
 
