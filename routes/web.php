@@ -30,6 +30,43 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
             $router->get('/','Master\CityController@index');
         });
 
+        // master Company group
+        $router->group(['prefix'=>'company'], function() use($router){
+            $router->get('/','Master\CompanyController@index');
+        });
+
+        // master Department group
+        $router->group(['prefix'=>'department'], function() use($router){
+            $router->post('/','Master\DepartmentController@index');
+        });
+
+        // master Division group
+        $router->group(['prefix'=>'division'], function() use($router){
+            $router->post('/','Master\DivisionController@index');
+        });
+
+        // master page group
+        $router->group(['prefix'=>'page'], function() use($router){
+            $router->get('/','Master\PageController@index');
+        });
+
+        // master menu group
+        $router->group(['prefix'=>'menu'], function() use($router){
+            $router->get('/','Master\MenuController@index');
+            $router->post('parent','Master\MenuController@parent');
+            $router->post('add','Master\MenuController@add');
+            $router->post('delete','Master\MenuController@delete');
+            $router->post('grid','Master\MenuController@grid');
+        });
+
+        // master icon group
+        $router->group(['prefix'=>'icon'], function() use($router){
+            $router->get('/','Master\IconController@index');
+            $router->post('grid','Master\IconController@grid');
+            $router->post('add','Master\IconController@add');
+            $router->post('delete','Master\IconController@delete');
+        });
+
         // master measure group
         $router->group(['prefix'=>'measure'], function() use($router){
             $router->get('/','Master\MeasureController@index');
@@ -85,12 +122,25 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
         });
     });
 
-    // Account Group
+    // Auth Group
     $router->group(['prefix' => 'auth'], function() use($router){
         // Index of API
         $router->get('/', 'Account\AuthController@index');
         $router->post('login', 'Account\AuthController@login');
         $router->post('menu', 'Account\AuthController@menu');
+    });
+
+    // Account Group
+    $router->group(['prefix' => 'account'], function() use($router){
+        // for user account
+        $router->group(['prefix' => 'user'], function() use($router){
+            $router->get('find/{id}', 'Account\UserController@find');
+            $router->post('check', 'Account\UserController@check');
+            $router->post('grid', 'Account\UserController@grid');
+            $router->post('add', 'Account\UserController@add');
+            $router->post('edit', 'Account\UserController@edit');
+            $router->post('delete', 'Account\UserController@delete');
+        });
     });
 
 

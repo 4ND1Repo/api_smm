@@ -1,15 +1,15 @@
 server {
-  listen 8080;
-  listen [::]:8080;
+  listen 80;
+  listen [::]:80;
   server_tokens off;
   server_name _;
-  
+
   resolver 8.8.8.8 1.1.1.1 valid=300s;
   resolver_timeout 5s;
 
   root /app;
   index index.php;
-  
+
   # If file is an asset, set expires and break
   location ~* \.(ico|css|js|gif|jpe?g|png)(\?[0-9]+)?$ {
     expires max;
@@ -23,7 +23,7 @@ server {
   location ~ /\.ht {
     deny  all;
   }
-  
+
   # secure file and folder
   location /conf { internal; }
   location /upload { internal; }
@@ -34,7 +34,7 @@ server {
   location ~ /\.git {
     deny  all;
   }
-  
+
   if (!-e $request_filename)
   {
     rewrite ^/(.*)$ /index.php?/$1 last;

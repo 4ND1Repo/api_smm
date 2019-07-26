@@ -47,7 +47,9 @@ class AuthController extends Controller
 
     public function menu(Request $r){
         $res = NULL;
-        $qMenu = UserMenu::where(['company_code' => $r->company,'department_code' => $r->department,'division_code' => $r->division])->get();
+        $data = [];
+
+        $qMenu = UserMenu::where(['company_code' => empty($r->company)?NULL:$r->company,'department_code' => empty($r->department)?NULL:$r->department,'division_code' => empty($r->division)?NULL:$r->division])->get();
         if($qMenu->count() > 0){
             $idMenu = $res = [];
             foreach($qMenu AS $row){
@@ -65,7 +67,6 @@ class AuthController extends Controller
             foreach($res as $row)
                 $tmp[$row->menu_name] = $row;
             ksort($tmp);
-            $data = [];
             foreach($tmp as $row)
                 $data[] = $row;
         }

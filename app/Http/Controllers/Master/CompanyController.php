@@ -6,7 +6,7 @@ namespace App\Http\Controllers\Master;
 use App\Http\Controllers\Controller;
 
 // Embed a model
-use App\Model\Master\PageModel AS Page;
+use App\Model\Master\CompanyModel AS Company;
 
 // Embed a Helper
 use DB;
@@ -14,7 +14,7 @@ use App\Helpers\Api;
 use Illuminate\Http\Request;
 
 
-class PageController extends Controller
+class CompanyController extends Controller
 {
     /**
      * Create a new controller instance.
@@ -26,7 +26,7 @@ class PageController extends Controller
     }
 
     public function index(){
-        return response()->json(Api::response(true,"Sukses",Page::all()),200);
+        return Api::response(true,"Sukses",Company::all());
     }
 
 }
