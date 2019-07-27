@@ -78,7 +78,9 @@ class RequestController extends Controller
     public function find_tools($id){
         $data = [];
         $data['request_tools'] = ReqTools::where('req_tools_code',$id)->first();
-        $data['request_tools_detail'] = ReqToolsDetail::join('master.master_stock', 'master.master_stock.stock_code', '=', 'document.request_tools_detail.stock_code')
+        $data['request_tools_detail'] = ReqToolsDetail::selectRaw('master.master_stock.*, master.master_measure.measure_type, document.request_tools_detail.req_tools_qty, document.request_tools_detail.finish_by, document.request_tools_detail.fullfillment')
+            ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'document.request_tools_detail.stock_code')
+            ->join('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
                 ->where('req_tools_code',$id)->get();
         return Api::response(true,"Sukses",$data);
     }
