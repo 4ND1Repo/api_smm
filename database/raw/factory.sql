@@ -1848,5 +1848,5 @@ INSERT INTO [master].[master_icon](icon_name) VALUES
 ('fab fa-youtube'),
 ('fab fa-youtube-square'),
 ('fab fa-zhihu'),
-('fab fa-penny-arcade'),
+('fab fa-penny-arcade')
 GO
