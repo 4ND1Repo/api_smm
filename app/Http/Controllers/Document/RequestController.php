@@ -257,9 +257,10 @@ class RequestController extends Controller
     public function find_po($id){
         $data = [];
         $data['purchase_order'] = PO::where('po_code',$id)->first();
-        $data['purchase_order_detail'] = PODetail::selectRaw('master.master_stock.*, document.purchase_order_detail.*')
+        $data['purchase_order_detail'] = PODetail::selectRaw('master.master_stock.*, document.purchase_order_detail.*, master.master_measure.measure_type')
                 ->join('stock.stock', 'stock.stock.main_stock_code', '=', 'document.purchase_order_detail.main_stock_code')
                 ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code')
+                ->join('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
                 ->where('po_code',$id)->get();
         return Api::response(true,"Sukses",$data);
     }

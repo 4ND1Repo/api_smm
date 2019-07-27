@@ -155,9 +155,10 @@ class StockController extends Controller
         $return = [];
         // $stock = Stock::join('master.master_stock','master.master_stock.stock_code','=','stock.stock.stock_code');
         $stock = DB::select(DB::raw("SELECT * FROM (
-            SELECT stock.stock.main_stock_code, (master.master_stock.stock_code + ' - ' + master.master_stock.stock_name + ' - ' + master.master_stock.stock_type + ' - ' + master.master_stock.stock_size) as stock_name
+            SELECT stock.stock.main_stock_code, (master.master_stock.stock_code + ' - ' + master.master_stock.stock_name + ' - ' + master.master_stock.stock_type + ' - ' + master.master_stock.stock_size + ' - ' + master.master_stock.stock_brand + ' - ' + master.master_measure.measure_type) as stock_name
             FROM stock.stock
             JOIN master.master_stock ON master.master_stock.stock_code = stock.stock.stock_code
+            JOIN master.master_measure ON master.master_measure.measure_code = master.master_stock.measure_code
         ) as stock WHERE stock_name LIKE '%".$r->find."%'"));
         if(count($stock) > 0)
             foreach($stock as $row){
