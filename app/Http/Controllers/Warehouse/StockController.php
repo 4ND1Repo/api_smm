@@ -83,6 +83,17 @@ class StockController extends Controller
         return Api::response(true,"Sukses",$data);
     }
 
+    public function find_by_stock(Request $r){
+        $data = Stock::selectRaw('stock.stock.main_stock_code, master.master_stock.*, qty.stock_qty, master.master_measure.measure_type')
+          ->join('master.master_stock','master.master_stock.stock_code','=','stock.stock.stock_code')
+          ->leftJoin(DB::raw("(SELECT DISTINCT main_stock_code, SUM(qty) AS stock_qty FROM stock.qty GROUP BY main_stock_code ) AS qty"),'qty.main_stock_code','=','stock.stock.main_stock_code')
+          ->leftJoin("master.master_measure",'master.master_measure.measure_code','=','master.master_stock.measure_code')
+          ->where('stock.stock.stock_code',$r->stock_code)
+          ->where('stock.stock.menu_page',$r->menu_page)
+          ->first();
+        return Api::response(true,"Sukses",$data);
+    }
+
     public function add_master($r){
         $stock = new MasterStock;
         $stock->stock_code = $this->_generate_master_prefix($r->category_code);

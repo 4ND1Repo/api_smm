@@ -361,7 +361,10 @@ INSERT INTO [master].[master_status](status_code,status_label) VALUES
 ('ST03', 'Tidak cukup'),
 ('ST04', 'Pembelian'),
 ('ST05', 'Selesai'),
-('ST06', 'Menunggu')
+('ST06', 'Menunggu'),
+('ST07', 'Disetujui'),
+('ST08', 'Tidak disetujui'),
+('ST09', 'Dibatalkan')
 GO
 INSERT INTO [master].[master_page] VALUES
 ('wh', 'Warehouse'),

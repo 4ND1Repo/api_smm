@@ -32,7 +32,11 @@ class OpnameController extends Controller
     }
 
     private function __check_approve($r){
-        $query = Opname::where(['main_stock_code' => $r->main_stock_code, 'approve_by' => NULL]);
+        $query = Opname::where(['main_stock_code' => $r->main_stock_code])
+            ->where(function($query){
+                $query->where('approve_by', NULL);
+                $query->where('reject_by', NULL);
+            });
         return ($query->count()==0);
     }
 

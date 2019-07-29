@@ -77,7 +77,7 @@ class PoController extends Controller
               }
           }
         }
-        return Api::response(true,"Sukses",$data);
+        return response()->json(Api::response(true,"Sukses",$data),200);
     }
 
     public function find($id){
@@ -93,7 +93,21 @@ class PoController extends Controller
                   $do->on('DocDO.main_stock_code','=','document.purchase_order_detail.main_stock_code');
                 })
                 ->where('document.purchase_order_detail.po_code',$id)->get();
-        return Api::response(true,"Sukses",$data);
+        return response()->json(Api::response(true,"Sukses",$data),200);
+    }
+
+    public function check_price(Request $r){
+        $query = PODetail::selectRaw('document.purchase_order_detail.stock_price')
+            ->join('document.purchase_order', 'document.purchase_order.po_code', '=', 'document.purchase_order_detail.po_code')
+            ->where('main_stock_code', $r->main_stock_code)
+            ->orderBy('create_date', 'DESC');
+        return response()->json(Api::response(true,"Sukses",$query->count() > 0?(!is_null($r = $query->first()->stock_price)?$r:0):0),200);
+    }
+
+    public function cancel(Request $r){
+        $query = PO::where('po_code', $r->po_code)
+            ->update(['status' => 'ST09', 'finish_by' => $r->nik, 'finish_date' => date('Y-m-d H:i:s')]);
+        return response()->json(Api::response(true,"Sukses"),200);
     }
 
     public function grid(Request $r){

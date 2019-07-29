@@ -247,6 +247,7 @@ class RequestController extends Controller
                 $pod->po_code = $po->po_code;
                 $pod->main_stock_code = $main_stock_code;
                 $pod->po_qty = (float) $qty;
+                $pod->po_notes = isset($r->notes[$main_stock_code])?$r->notes[$main_stock_code]:NULL;
                 $pod->save();
             }
 

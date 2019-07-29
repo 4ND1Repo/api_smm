@@ -153,6 +153,8 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
             // Purchase Order group
             $router->group(['prefix' => 'po'], function() use($router){
                 $router->get('find/{id}','Purchasing\PoController@find');
+                $router->post('check_price', 'Purchasing\PoController@check_price');
+                $router->post('cancel', 'Purchasing\PoController@cancel');
                 $router->post('process', 'Purchasing\PoController@process');
                 $router->post('grid', 'Purchasing\PoController@grid');
             });
@@ -207,6 +209,7 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
         $router->group(['prefix' => 'stock'], function() use($router){
             // add stock
             $router->get('find/{id}', 'Warehouse\StockController@find');
+            $router->post('find_by_stock', 'Warehouse\StockController@find_by_stock');
             $router->post('add', 'Warehouse\StockController@add');
             $router->post('edit', 'Warehouse\StockController@edit');
             $router->post('autocomplete', 'Warehouse\StockController@autocomplete');
