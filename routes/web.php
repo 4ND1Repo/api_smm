@@ -145,6 +145,21 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
 
 
 
+    // Management Group
+    $router->group(['prefix' => 'mng'], function() use($router){
+        // for user account
+        $router->group(['prefix' => 'user'], function() use($router){
+            // complaint group
+            $router->group(['prefix' => 'complaint'], function() use($router){
+                $router->post('add', 'Account\ComplaintController@add');
+                $router->post('infinite/{id}', 'Account\ComplaintController@infinite');
+            });
+        });
+    });
+
+
+
+
     // Purchasing Group
     $router->group(['prefix' => 'pur'], function() use($router){
 
@@ -157,6 +172,7 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
                 $router->post('cancel', 'Purchasing\PoController@cancel');
                 $router->post('process', 'Purchasing\PoController@process');
                 $router->post('grid', 'Purchasing\PoController@grid');
+                $router->post('history/grid', 'Purchasing\PoController@history_grid');
             });
         });
     });
@@ -199,6 +215,7 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
             // request Delivery Order Group
             $router->group(['prefix' => 'do'], function() use($router){
                 $router->get('find/{id}','Document\RequestController@find_do');
+                $router->post('check','Document\RequestController@check_do');
                 $router->post('add','Document\RequestController@add_do');
                 $router->post('delete','Document\RequestController@delete_do');
                 $router->post('grid','Document\RequestController@grid_do');

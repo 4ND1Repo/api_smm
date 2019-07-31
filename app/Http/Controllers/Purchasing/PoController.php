@@ -181,4 +181,90 @@ class PoController extends Controller
 
         return response()->json($data,200);
     }
+
+    public function history_grid(Request $r){
+        // collect data from post
+        $input = $r->input();
+
+        $column_search = [
+            'document.purchase_order_detail.po_code',
+            'document.purchase_order.po_date',
+            'document.delivery_order.do_code',
+            'master.master_stock.stock_name',
+            'master.master_stock.stock_size',
+            'master.master_stock.stock_brand',
+            'master.master_stock.stock_type',
+            'master.master_stock.stock_color'
+        ];
+
+        // generate default
+        if(!isset($input['sort']))
+            $input['sort'] = array(
+                'sort' => 'desc',
+                'field' => 'document.purchase_order.po_date'
+            );
+        else {
+          if($input['sort']['field'] == 'po_code') $input['sort']['field'] = 'document.purchase_order_detail.po_code';
+        }
+
+        // whole query
+        $sup = PODetail::selectRaw('document.purchase_order_detail.*, master.master_stock.*, po_date, document.purchase_order.status, finish_by, finish_date, document.delivery_order.do_code, document.delivery_order.do_qty, master.master_status.status_label, master.master_measure.measure_type')
+        ->join('document.purchase_order', 'document.purchase_order.po_code', '=', 'document.purchase_order_detail.po_code')
+        ->leftJoin('document.delivery_order', function($query){
+            $query->on('document.delivery_order.po_code', '=', 'document.purchase_order_detail.po_code');
+            $query->on('document.delivery_order.main_stock_code', '=', 'document.purchase_order_detail.main_stock_code');
+        })
+        ->join('stock.stock', 'stock.stock.main_stock_code', '=', 'document.purchase_order_detail.main_stock_code')
+        ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code')
+        ->join('master.master_status', 'master.master_status.status_code', '=', 'document.purchase_order.status')
+        ->join('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
+        ->where(['document.purchase_order.menu_page_destination' => $input['menu_page']])
+        ->whereIn('document.purchase_order.status', ['ST05','ST09']);
+
+        // where condition
+        if(isset($input['query'])){
+            if(!is_null($input['query']) and !empty($input['query'])){
+                foreach($input['query'] as $field => $val){
+                    if(in_array($field, array('status')))
+                        $sup->where("document.purchase_order.".$field,($val=="null"?NULL:$val));
+                    else if($field == 'find'){
+                        if(!empty($val)){
+                            $sup->where(function($sup) use($column_search,$val){
+                                foreach($column_search as $row)
+                                    $sup->orWhere($row,'like',"%".$val."%");
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        // $sup->where();
+        $count_all = $sup->count();
+        // get total page from count all
+        $pages = (!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))? ceil($count_all/$input['pagination']['perpage']):1;
+
+        $sup->orderBy($input['sort']['field'],$input['sort']['sort']);
+
+        // skipping for next page
+        $skip = (!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))?($input['pagination']['page']-1)*$input['pagination']['perpage']:0;
+        $sup->skip($skip);
+        if(!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))
+            $sup->take($input['pagination']['perpage']);
+
+        $row = $sup->get();
+        $data = [
+            "meta"=> [
+                "page"=> $input['pagination']['page'],
+                "pages"=> $pages,
+                "perpage"=> (!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))?$input['pagination']['perpage']:-1,
+                "total"=> $count_all,
+                "sort"=> $input['sort']['sort'],
+                "field"=> $input['sort']['field']
+            ],
+            "data"=> $row
+        ];
+
+        return response()->json($data,200);
+    }
 }

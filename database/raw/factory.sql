@@ -14,6 +14,20 @@ GO
 CREATE SCHEMA document
 GO
 
+
+
+CREATE TABLE [document].[complaint](
+	[complaint_id] [bigint] NOT NULL IDENTITY(1,1),
+	[complaint_to] [varchar](10) NULL,
+	[complaint_type] [varchar](10) NOT NULL DEFAULT(('CMPT001')),
+	[complaint_description] [text] NOT NULL,
+	[complaint_anonymous] [bit] NOT NULL DEFAULT((0)),
+	[create_by] [varchar](10) NOT NULL,
+	[create_date] [datetime] NOT NULL DEFAULT(GETDATE()),
+	[status] [varchar](10) NOT NULL DEFAULT(('ST01'))
+) ON [PRIMARY]
+GO
+
 CREATE TABLE [document].[request_tools](
 	[req_tools_code] [varchar](20) NOT NULL,
 	[menu_page] [varchar](20) NOT NULL,
@@ -418,7 +432,8 @@ INSERT INTO [master].[master_menu](id_menu,menu_page, menu_name, menu_url,menu_i
 (29, 'su', 'Role Menu', '/mng/role_menu', 'fa fa-clipboard-list', 26),
 (30, 'su', 'Role User', '/mng/role_user', 'fa fa-user-cog', 26),
 (31, 'su', 'Master', '/', 'fa fa-box', NULL),
-(32, 'su', 'Icon', '/mst/icon', 'fa fa-grip-horizontal', 31)
+(32, 'su', 'Icon', '/mst/icon', 'fa fa-grip-horizontal', 31),
+(33, 'pur', 'Riwayat', '/req/po/history', 'fa fa-file-alt', 20)
 GO
 INSERT INTO [master].[master_company](company_code,company_name) VALUES
 ('CP01','Sarana Makin Mulia, PT.')
@@ -466,7 +481,8 @@ INSERT INTO [account].[user_menu](company_code, department_code, division_code, 
 (NULL, NULL, NULL, 29),
 (NULL, NULL, NULL, 30),
 (NULL, NULL, NULL, 31),
-(NULL, NULL, NULL, 32)
+(NULL, NULL, NULL, 32),
+('CP01', 'SMDP02', 'SMDV03', 33)
 GO
 INSERT INTO [account].[user](nik,pwd_hash,company_code,department_code,division_code,status_code) VALUES
 ('superuser', '$2y$12$rbfkWNlw4gj7.OxIm80UsOte/uvI9Cb3Ndn6/TlGHty5LtT3N49vW', NULL, NULL, NULL, 'ST01'),
