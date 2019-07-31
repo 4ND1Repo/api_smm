@@ -40,7 +40,7 @@ class ComplaintController extends Controller
     public function infinite($id, Request $r){
         $r->last=!is_null($r->last)?(int)$r->last:0;
 
-        $q = Complaint::selectRaw("*, DATEADD(HOUR, 7, create_date) create_date");
+        $q = Complaint::selectRaw("*");
 
         if($id != "0")
           $q->where('create_by', $id);
@@ -48,7 +48,7 @@ class ComplaintController extends Controller
         // Order By
         $q->skip((int)$r->last)->take((int)$r->length)->orderBy('complaint_id', 'DESC');
 
-        $content = $q->count() > 0?$q->get():[];
+        $content = $q->get();
 
         $data = [
           'last' => ((int)$r->last + (int)$r->length),
