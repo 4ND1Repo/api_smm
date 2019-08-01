@@ -62,7 +62,10 @@ class ListBuyController extends Controller
         ->leftJoin(DB::raw("(SELECT main_stock_code, cabinet_name FROM stock.cabinet LEFT JOIN master.master_cabinet ON master.master_cabinet.cabinet_code = stock.cabinet.cabinet_code WHERE master.master_cabinet.menu_page = '".$input['menu_page']."') AS cabinet"),'cabinet.main_stock_code','=','stock.stock.main_stock_code')
         ->leftJoin(DB::raw("(SELECT DISTINCT main_stock_code, SUM(qty) AS stock_qty FROM stock.qty GROUP BY main_stock_code ) AS qty"),'qty.main_stock_code','=','stock.stock.main_stock_code')
         ->where(['stock.stock.menu_page' => $input['menu_page']])
-        ->whereRaw(DB::raw('(CASE WHEN [qty].[stock_qty] IS NULL THEN 0 ELSE [qty].[stock_qty] END) <= [master].[master_stock].[stock_min_qty]'));
+        ->where(function($sup){
+          $sup->whereRaw(DB::raw('(CASE WHEN [qty].[stock_qty] IS NULL THEN 0 ELSE [qty].[stock_qty] END) <= [master].[master_stock].[stock_min_qty]'));
+          $sup->orWhereRaw(DB::raw("(SELECT COUNT(stock_code) AS cnt FROM document.request_tools_detail WHERE stock_code = master.master_stock.stock_code AND fullfillment = 0 GROUP BY stock_code) > 0 "));
+        });
 
         // where condition
         if(isset($input['query'])){
