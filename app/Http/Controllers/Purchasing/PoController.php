@@ -97,16 +97,19 @@ class PoController extends Controller
     }
 
     public function check_price(Request $r){
+        $tmp = explode(' - ',$r->supplier_code);
         $query = PODetail::selectRaw('document.purchase_order_detail.stock_price')
             ->join('document.purchase_order', 'document.purchase_order.po_code', '=', 'document.purchase_order_detail.po_code')
             ->where('main_stock_code', $r->main_stock_code)
+            ->where('supplier_code', $tmp[0])
+            ->whereNotNull('finish_by')
             ->orderBy('create_date', 'DESC');
         return response()->json(Api::response(true,"Sukses",$query->count() > 0?(!is_null($r = $query->first()->stock_price)?$r:0):0),200);
     }
 
     public function cancel(Request $r){
         $query = PO::where('po_code', $r->po_code)
-            ->update(['status' => 'ST09', 'finish_by' => $r->nik, 'finish_date' => date('Y-m-d H:i:s')]);
+            ->update(['status' => 'ST09', 'reason' => $r->reason, 'finish_by' => $r->nik, 'finish_date' => date('Y-m-d H:i:s')]);
         return response()->json(Api::response(true,"Sukses"),200);
     }
 

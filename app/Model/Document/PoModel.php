@@ -19,7 +19,8 @@ class PoModel extends Model {
         'create_date',
         'finish_by',
         'finish_date',
-        'status'
+        'status',
+        'reason'
     ];
 
     public $timestamps = false;
