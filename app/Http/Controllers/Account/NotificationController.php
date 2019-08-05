@@ -8,6 +8,8 @@ use App\Http\Controllers\Controller;
 // Embed a model
 use App\Model\Document\NotificationModel AS Notification;
 use App\Model\Master\PageModel AS Page;
+use App\Model\Account\UserGroupModel AS UserGroup;
+use App\Model\Account\UserModel AS User;
 
 // Embed a Helper
 use DB;
@@ -31,30 +33,51 @@ class NotificationController extends Controller
     }
 
     public function add(Request $r){
-      $to = $r->notification_to;
-      // $to = [];
-      // $tmp = [];
-      // $q = Page::select('page_code')->all()
-      // foreach ($q as $i => $r) {
-      //   $tmp[] = $r->page_code;
-      // }
-      // if(in_array($r->notification_to,$tmp)){
-      //
-      // }
+      $to = [];
 
-      $q = new Notification;
-      $q->notification_to = $to;
-      if($q->has('notification_from'))
-        $q->notification_from = (!empty($r->notification_from)?$r->notification_from:NULL);
-      if($q->has('notification_title'))
-        $q->notification_title = $r->notification_title;
-      if($q->has('notification_url'))
-        $q->notification_url = $r->notification_url;
-      if($q->has('notification_icon'))
-        $q->notification_icon = $r->notification_icon;
+      if(!is_array($r->notification_to)){
+        $q = UserGroup::where(function($q) use($r){
+          $q->where('group_code', $r->notification_to);
+          $q->orWhere('page_code', $r->notification_to);
+          $q->orWhere('company_code', $r->notification_to);
+          $q->orWhere('department_code', $r->notification_to);
+          $q->orWhere('division_code', $r->notification_to);
+        })->get();
+        if($q->count() > 0){
+          $tmp = [];
+          foreach ($q as $i => $dt) {
+            $tmp[] = $dt->group_code;
+          }
 
-      $q->notification_content = $r->notification_content;
-      $q->save();
+          $q = User::whereIn('group_code',$tmp)->get();
+          if($q->count() > 0){
+            foreach ($q as $i => $dt) {
+              $to[] = $dt->nik;
+            }
+          }
+        } else
+          $to[] = $r->notification_to;
+      } else{
+        $to = $r->notification_to;
+      }
+
+      if(count($to) > 0) {
+        foreach ($to as $i => $nik) {
+          $q = new Notification;
+          $q->notification_to = $nik;
+          if($r->has('notification_from'))
+          $q->notification_from = (!empty($r->notification_from)?$r->notification_from:NULL);
+          if($r->has('notification_title'))
+          $q->notification_title = $r->notification_title;
+          if($r->has('notification_url'))
+          $q->notification_url = $r->notification_url;
+          if($r->has('notification_icon'))
+          $q->notification_icon = $r->notification_icon;
+
+          $q->notification_content = $r->notification_content;
+          $q->save();
+        }
+      }
       return response()->json(Api::response(true, 'Sukses'),200);
     }
 
@@ -69,7 +92,7 @@ class NotificationController extends Controller
         $where['notification_send'] = 0;
 
         $query = Notification::where($where);
-        $query2 = Notification::where($where)->take(10)->orderBy('notification_id', 'DESC');
+        $query2 = Notification::where($where)->take(10)->orderBy('notification_id', 'ASC');
 
         $data['count'] = $query->count();
         $data['content'] = ($query->count() > 0 || $r->init == 1)? $query2->get() : [];

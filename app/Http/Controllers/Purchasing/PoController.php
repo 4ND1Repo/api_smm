@@ -77,7 +77,11 @@ class PoController extends Controller
               }
           }
         }
-        return response()->json(Api::response(true,"Sukses",$data),200);
+        $return = [
+          "po_code" => $po_code,
+          "to" => PO::where(['po_code' => $po_code])->first()->create_by
+        ];
+        return response()->json(Api::response(true,"Sukses",$return),200);
     }
 
     public function find($id){

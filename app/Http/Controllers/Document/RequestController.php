@@ -119,22 +119,7 @@ class RequestController extends Controller
         ReqToolsDetail::where(['req_tools_code' => $r->req_tools_code])->delete();
         // second delete request tools
         ReqTools::where(['req_tools_code' => $r->req_tools_code])->delete();
-        // third remove from stock qty
-        $qty = Qty::where(['po_code' => $r->req_tools_code])->get();
-        if($qty->count() > 0){
-            // balancing qty from deleted request tools
-            foreach($qty as $row){
-                $new_qty = new Qty;
-                $new_qty->main_stock_code = $row->main_stock_code;
-                $new_qty->qty = abs($row->qty);
-                $new_qty->nik = $r->nik;
-                $new_qty->po_code = $row->po_code;
-                $new_qty->stock_notes = "Hapus dari request barang (".$row->po_code.")";
-                $new_qty->save();
-            }
-            // set null for po_code
-            Qty::where(['po_code' => $r->req_tools_code])->update(['po_code' => NULL]);
-        }
+
         return response()->json(Api::response(true,'Sukses'),200);
     }
 
