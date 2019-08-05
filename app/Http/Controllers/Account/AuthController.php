@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Model\Master\MenuModel AS Menu;
 use App\Model\Account\UserModel AS User;
 use App\Model\Account\UserMenuModel AS UserMenu;
+use App\Model\Account\UserGroupModel AS UserGroup;
 
 // Embed a Helper
 use Illuminate\Http\Request;
@@ -36,7 +37,9 @@ class AuthController extends Controller
             if($user->count() >= 1){
                 $user = $user->first();
                 if(hash::check($r->post('p'),$user->pwd_hash)){
-                    return response()->json(Api::response(1,'Sukses', ['nik' => $user->nik, 'company' => $user->company_code, 'department' => $user->department_code, 'division' => $user->division_code]),200);
+                    // get company_code, department_code, division_code, page_code
+                    $q = UserGroup::where(['group_code' => $user->group_code])->first();
+                    return response()->json(Api::response(1,'Sukses', ['nik' => $user->nik, 'company' => $q->company_code, 'department' => $q->department_code, 'division' => $q->division_code, 'page' => $q->page_code, 'group' => $q->group_code]),200);
                 }
                 return response()->json(Api::response(0,'Kata sandi salah'), 200);
             }
@@ -49,7 +52,7 @@ class AuthController extends Controller
         $res = NULL;
         $data = [];
 
-        $qMenu = UserMenu::where(['company_code' => empty($r->company)?NULL:$r->company,'department_code' => empty($r->department)?NULL:$r->department,'division_code' => empty($r->division)?NULL:$r->division])->get();
+        $qMenu = UserMenu::where(['group_code' => $r->group])->get();
         if($qMenu->count() > 0){
             $idMenu = $res = [];
             foreach($qMenu AS $row){
@@ -57,7 +60,9 @@ class AuthController extends Controller
             }
 
             // get menu
-            $tmpMenu = Menu::whereIn('id_menu',$idMenu)->orderBy('id_parent', 'ASC')->orderBy('id_menu', 'ASC')->get();
+            $tmpMenu = Menu::selectRaw('master.master_menu.*, account.user_menu."add", account.user_menu.edit, account.user_menu.del')->join('account.user_menu', function($on) use($r){
+              $on->on('account.user_menu.id_menu', '=', 'master.master_menu.id_menu')->whereRaw("account.user_menu.group_code = '".$r->group."'");
+            })->whereIn('master.master_menu.id_menu',$idMenu)->orderBy('id_parent', 'ASC')->orderBy('master.master_menu.id_menu', 'ASC')->get();
             if($tmpMenu->count() > 0){
                 $res = self::read_menu($tmpMenu);
             }

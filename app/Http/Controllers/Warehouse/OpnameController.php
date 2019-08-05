@@ -78,7 +78,7 @@ class OpnameController extends Controller
         $stk = Stock::where(['main_stock_code' => $main_stock_code])->first();
 
         $qty = Opname::selectRaw("CAST((opname_qty_from - opname_qty) AS NUMERIC) AS qty")->where(['main_stock_code' => $main_stock_code, 'opname_date_from' => $opname_date_from])->first()->qty;
-        DB::select(DB::raw("EXEC stock.stock_out @stcode='".$stk->stock_code."', @qty='".$qty."',@nik='".$r->nik."', @notes='Stock Opname (".$date.")', @page='".$stk->menu_page."' "));
+        DB::select(DB::raw("EXEC stock.stock_out @stcode='".$stk->stock_code."', @qty='".$qty."',@nik='".$r->nik."', @notes='Stock Opname (".$date.")', @page='".$stk->page_code."' "));
         $query = Opname::where([
             'main_stock_code' => $main_stock_code,
             'opname_date_from' => $opname_date_from
@@ -129,7 +129,7 @@ class OpnameController extends Controller
         $sup = Opname::selectRaw('stock.opname.*, stock.stock.stock_code, master.master_stock.stock_name, master.master_stock.stock_size, master.master_stock.stock_brand, master.master_stock.stock_type')
         ->join('stock.stock', 'stock.opname.main_stock_code', '=', 'stock.stock.main_stock_code')
         ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code')
-        ->where(['stock.stock.menu_page' => $input['menu_page']]);
+        ->where(['stock.stock.page_code' => $input['page_code']]);
 
         // where condition
         if(isset($input['query'])){

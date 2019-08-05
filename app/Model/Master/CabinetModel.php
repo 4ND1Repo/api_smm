@@ -13,7 +13,7 @@ class CabinetModel extends Model {
         'cabinet_code',
         'cabinet_name',
         'cabinet_description',
-        'menu_page',
+        'page_code',
         'status_code'
     ];
 

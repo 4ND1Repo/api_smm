@@ -61,7 +61,7 @@ class StockController extends Controller
     }
 
     public function __check_data($r){
-        $find = Stock::where(['menu_page' => $r->menu_page, 'stock_code' => $r->stock_code]);
+        $find = Stock::where(['page_code' => $r->page_code, 'stock_code' => $r->stock_code]);
         if($find->count() > 0)
             return $find->get();
         return false;
@@ -80,7 +80,7 @@ class StockController extends Controller
         ->leftJoin(DB::raw("(SELECT DISTINCT main_stock_code, SUM(qty) AS stock_qty FROM stock.qty GROUP BY main_stock_code ) AS qty"),'qty.main_stock_code','=','stock.stock.main_stock_code')
         ->where('stock.stock.main_stock_code',$id)
         ->first();
-        return Api::response(true,"Sukses",$data);
+        return response()->json(Api::response(true,"Sukses",$data),200);
     }
 
     public function find_by_stock(Request $r){
@@ -89,9 +89,9 @@ class StockController extends Controller
           ->leftJoin(DB::raw("(SELECT DISTINCT main_stock_code, SUM(qty) AS stock_qty FROM stock.qty GROUP BY main_stock_code ) AS qty"),'qty.main_stock_code','=','stock.stock.main_stock_code')
           ->leftJoin("master.master_measure",'master.master_measure.measure_code','=','master.master_stock.measure_code')
           ->where('stock.stock.stock_code',$r->stock_code)
-          ->where('stock.stock.menu_page',$r->menu_page)
+          ->where('stock.stock.page_code',$r->page_code)
           ->first();
-        return Api::response(true,"Sukses",$data);
+        return response()->json(Api::response(true,"Sukses",$data),200);
     }
 
     public function add_master($r){
@@ -119,7 +119,7 @@ class StockController extends Controller
 
         if(! $this->__check_data($r)){
 
-            $stk = Stock::firstOrNew(['stock_code'=>$stock->stock_code, 'menu_page' => $r->menu_page]);
+            $stk = Stock::firstOrNew(['stock_code'=>$stock->stock_code, 'page_code' => $r->page_code]);
             if(!$stk->exists){
                 $stk->main_stock_code = $this->_generate_prefix();
                 $stk->nik = $r->nik;
@@ -210,9 +210,9 @@ class StockController extends Controller
         $sup = Stock::selectRaw('stock.stock.main_stock_code, master.master_stock.*, master.master_measure.measure_type, qty.stock_qty, cabinet.cabinet_name')
         ->join('master.master_stock','master.master_stock.stock_code','=','stock.stock.stock_code')
         ->join('master.master_measure','master.master_measure.measure_code','=','master.master_stock.measure_code')
-        ->leftJoin(DB::raw("(SELECT main_stock_code, cabinet_name FROM stock.cabinet LEFT JOIN master.master_cabinet ON master.master_cabinet.cabinet_code = stock.cabinet.cabinet_code WHERE master.master_cabinet.menu_page = '".$input['menu_page']."') AS cabinet"),'cabinet.main_stock_code','=','stock.stock.main_stock_code')
+        ->leftJoin(DB::raw("(SELECT main_stock_code, cabinet_name FROM stock.cabinet LEFT JOIN master.master_cabinet ON master.master_cabinet.cabinet_code = stock.cabinet.cabinet_code WHERE master.master_cabinet.page_code = '".$input['page_code']."') AS cabinet"),'cabinet.main_stock_code','=','stock.stock.main_stock_code')
         ->leftJoin(DB::raw("(SELECT DISTINCT main_stock_code, SUM(qty) AS stock_qty FROM stock.qty GROUP BY main_stock_code ) AS qty"),'qty.main_stock_code','=','stock.stock.main_stock_code')
-        ->where(['stock.stock.menu_page' => $input['menu_page']]);
+        ->where(['stock.stock.page_code' => $input['page_code']]);
 
         // where condition
         if(isset($input['query'])){
@@ -308,7 +308,7 @@ class StockController extends Controller
         ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code')
         ->join('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
         ->leftJoin('master.master_supplier', 'master.master_supplier.supplier_code', '=', 'stock.qty.supplier_code')
-        ->where(['stock.stock.menu_page' => $input['menu_page']]);
+        ->where(['stock.stock.page_code' => $input['page_code']]);
 
         // where condition
         if(isset($input['query'])){
@@ -391,7 +391,7 @@ class StockController extends Controller
         ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code')
         ->join('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
         ->leftJoin('master.master_supplier', 'master.master_supplier.supplier_code', '=', 'stock.qty_out.supplier_code')
-        ->where(['stock.stock.menu_page' => $input['menu_page']]);
+        ->where(['stock.stock.page_code' => $input['page_code']]);
 
         // where condition
         if(isset($input['query'])){
@@ -446,7 +446,7 @@ class StockController extends Controller
         // whole query
         $query = Stock::selectRaw('stock.stock.main_stock_code, qty.stock_qty')
         ->leftJoin(DB::raw("(SELECT DISTINCT main_stock_code, SUM(qty) AS stock_qty FROM stock.qty GROUP BY main_stock_code ) AS qty"),'qty.main_stock_code','=','stock.stock.main_stock_code')
-        ->where(['stock.stock.menu_page' => $input['menu_page'], 'stock.stock.main_stock_code' => $input['main_stock_code']])->first();
+        ->where(['stock.stock.page_code' => $input['page_code'], 'stock.stock.main_stock_code' => $input['main_stock_code']])->first();
 
 
         return response()->json(Api::response(true,'Sukses',!is_null($query)?$query->stock_qty:0),200);

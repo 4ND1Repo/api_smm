@@ -46,7 +46,7 @@ class UserController extends Controller
     }
 
     public function find($id){
-        $data = User::selectRaw('nik, company_code, department_code, division_code')->where(['nik' => $id])->first();
+        $data = User::selectRaw('nik, group_code')->where(['nik' => $id])->first();
         return response()->json(Api::response(1,'Sukses', $data), 200);
     }
 
@@ -80,9 +80,7 @@ class UserController extends Controller
       $user = new User;
       $user->nik = $r->username;
       $user->pwd_hash = Hash::make($r->password);
-      $user->company_code = $r->company_code;
-      $user->department_code = $r->has('department_code')?(!empty($r->department_code)?$r->department_code:NULL):NULL;
-      $user->division_code = $r->has('division_code')?(!empty($r->division_code)?$r->division_code:NULL):NULL;
+      $user->group_code = $r->group_code;
       $user->status_code = "ST01";
       $user->save();
       return response()->json(Api::response(1,'Sukses'), 200);
@@ -90,9 +88,7 @@ class UserController extends Controller
 
     public function edit(Request $r){
       $data = [
-        'company_code' => $r->company_code,
-        'department_code' => $r->has('department_code')?(!empty($r->department_code)?$r->department_code:NULL):NULL,
-        'division_code' => $r->has('division_code')?(!empty($r->division_code)?$r->division_code:NULL):NULL
+        'group_code' => $r->group_code
       ];
 
       if($r->has('password')){
@@ -119,6 +115,7 @@ class UserController extends Controller
         $input = $r->input();
         $column_search = [
             'nik',
+            'account.user_group.group_name',
             'master.master_company.company_name',
             'master.master_department.department_name',
             'master.master_division.division_name',
@@ -133,10 +130,11 @@ class UserController extends Controller
             );
 
         // whole query
-        $query = User::selectRaw('account.[user].*, master.master_company.company_name, master.master_department.department_name, master.master_division.division_name, master.master_status.status_label')
-            ->leftJoin('master.master_company','master.master_company.company_code','=','account.user.company_code')
-            ->leftJoin('master.master_department','master.master_department.department_code','=','account.user.department_code')
-            ->leftJoin('master.master_division','master.master_division.division_code','=','account.user.division_code')
+        $query = User::selectRaw('account.[user].*, account.user_group.group_name, account.user_group.company_code, account.user_group.department_code, account.user_group.division_code, master.master_company.company_name, master.master_department.department_name, master.master_division.division_name, master.master_status.status_label')
+            ->Join('account.user_group','account.user_group.group_code','=','account.user.group_code')
+            ->leftJoin('master.master_company','master.master_company.company_code','=','account.user_group.company_code')
+            ->leftJoin('master.master_department','master.master_department.department_code','=','account.user_group.department_code')
+            ->leftJoin('master.master_division','master.master_division.division_code','=','account.user_group.division_code')
             ->leftJoin('master.master_status','master.master_status.status_code','=','account.user.status_code');
 
         // where condition

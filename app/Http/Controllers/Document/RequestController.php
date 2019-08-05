@@ -63,13 +63,13 @@ class RequestController extends Controller
         return date("Y-m-d H:i:s");
     }
 
-    public function _check_qty($qty,$stk_code,$menu_page){
+    public function _check_qty($qty,$stk_code,$page_code){
         $stock = Stock::selectRaw('CAST((SELECT SUM(qty) FROM stock.qty WHERE main_stock_code=stock.stock.main_stock_code) as DECIMAL) as qty')
-                ->where(['stock.stock.stock_code'=>$stk_code, 'menu_page' => $menu_page])->first();
+                ->where(['stock.stock.stock_code'=>$stk_code, 'page_code' => $page_code])->first();
 
         $waiting = ReqTools::selectRaw('CAST(SUM(req_tools_qty) as DECIMAL) as qty')
         ->join('document.request_tools_detail', 'document.request_tools_detail.req_tools_code', '=', 'document.request_tools.req_tools_code')
-        ->where(['document.request_tools_detail.stock_code'=>$stk_code, 'menu_page' => $menu_page,'status' => 'ST02'])
+        ->where(['document.request_tools_detail.stock_code'=>$stk_code, 'page_code' => $page_code,'status' => 'ST02'])
         ->groupBy(['document.request_tools_detail.stock_code']);
 
         return $qty<($stock->qty-($waiting->count()>0?$waiting->first()->qty:0));
@@ -89,7 +89,7 @@ class RequestController extends Controller
         $drt = new ReqTools;
         $drt->req_tools_code = $this->_generate_prefix_tools();
         $drt->create_by = $r->nik;
-        $drt->menu_page = $r->menu_page;
+        $drt->page_code = $r->page_code;
         $drt->name_of_request = $r->name_of_request;
         if($r->has('req_nik')){
             if(!empty($r->req_nik) && !is_null($r->req_nik))
@@ -101,7 +101,7 @@ class RequestController extends Controller
                 $drtd->req_tools_code = $drt->req_tools_code;
                 $drtd->stock_code = $stock_code;
                 $drtd->req_tools_qty = $qty;
-                if(!$this->_check_qty($qty,$stock_code,$r->menu_page)){
+                if(!$this->_check_qty($qty,$stock_code,$r->page_code)){
                     $drt->where(['req_tools_code' => $drt->req_tools_code])->update(['status' => "ST03"]);
                     $drtd->fullfillment = 0;
                 }
@@ -142,11 +142,11 @@ class RequestController extends Controller
         $data = [];
         $notes = "Pengeluaran Stock";
         // get data sended stock
-        $stock = ReqToolsDetail::selectRaw('document.request_tools.req_tools_code, stock_code, menu_page, req_tools_qty, (SELECT TOP 1 main_stock_code FROM stock.stock WHERE stock_code = document.request_tools_detail.stock_code AND menu_page = document.request_tools.menu_page) as main_stock_code')
+        $stock = ReqToolsDetail::selectRaw('document.request_tools.req_tools_code, stock_code, page_code, req_tools_qty, (SELECT TOP 1 main_stock_code FROM stock.stock WHERE stock_code = document.request_tools_detail.stock_code AND page_code = document.request_tools.page_code) as main_stock_code')
                 ->join('document.request_tools', 'document.request_tools.req_tools_code', '=', 'document.request_tools_detail.req_tools_code')
                 ->where(['stock_code' => $r->stock_code, 'document.request_tools.req_tools_code' => $r->req_tools_code])->first();
 
-        $qty = DB::select("EXEC stock.stock_out @stcode='".$r->stock_code."', @qty=".$stock->req_tools_qty.", @nik='".$r->nik."', @page='".$stock->menu_page."', @notes='".$notes."'");
+        $qty = DB::select("EXEC stock.stock_out @stcode='".$r->stock_code."', @qty=".$stock->req_tools_qty.", @nik='".$r->nik."', @page='".$stock->page_code."', @notes='".$notes."'");
         if(count($qty) > 0){
             // flag finish stock in document.request_tools_detail
             $drtd = ReqToolsDetail::where(['req_tools_code' => $stock->req_tools_code, 'stock_code' => $stock->stock_code])->update(['finish_by' => $r->nik, 'finish_date' => date('Y-m-d H:i:s')]);
@@ -181,7 +181,7 @@ class RequestController extends Controller
         // whole query
         $sup = ReqTools::selectRaw('document.request_tools.*, (SELECT count(req_tools_code) FROM document.request_tools_detail WHERE req_tools_code=document.request_tools.req_tools_code) as sum_item, master.master_status.status_label')
         ->join('master.master_status', 'master.master_status.status_code', '=', 'document.request_tools.status')
-        ->where(['document.request_tools.menu_page' => $input['menu_page']]);
+        ->where(['document.request_tools.page_code' => $input['page_code']]);
 
         // where condition
         if(isset($input['query'])){
@@ -238,9 +238,9 @@ class RequestController extends Controller
         $po->po_code = $this->_generate_prefix_po();
         $po->nik = $r->nik;
         $po->create_by = $r->nik;
-        $po->menu_page = $r->menu_page;
+        $po->page_code = $r->page_code;
         $po->po_date = date("Y-m-d H:i:s");
-        $po->menu_page_destination = $r->menu_page_destination;
+        $po->page_code_destination = $r->page_code_destination;
         if($po->save()){
             foreach($r->data as $main_stock_code => $qty){
                 $pod = new PODetail;
@@ -297,8 +297,8 @@ class RequestController extends Controller
         // whole query
         $sup = PO::selectRaw('document.purchase_order.*, (SELECT count(po_code) FROM document.purchase_order_detail WHERE po_code=document.purchase_order.po_code) as sum_item, master.master_status.status_label, master.master_page.page_name')
         ->join('master.master_status', 'master.master_status.status_code', '=', 'document.purchase_order.status')
-        ->join('master.master_page', 'master.master_page.page_code', '=', 'document.purchase_order.menu_page_destination')
-        ->where(['document.purchase_order.menu_page' => $input['menu_page']]);
+        ->join('master.master_page', 'master.master_page.page_code', '=', 'document.purchase_order.page_code_destination')
+        ->where(['document.purchase_order.page_code' => $input['page_code']]);
 
         // where condition
         if(isset($input['query'])){
@@ -363,7 +363,7 @@ class RequestController extends Controller
               $do = new DocDO;
               $do->do_code = $r->do_code;
               $do->po_code = $po_code;
-              $do->menu_page = $r->menu_page;
+              $do->page_code = $r->page_code;
               $do->main_stock_code = $main_stock_code;
               $do->do_qty = $qty;
               $do->create_by = $r->nik;
@@ -383,16 +383,16 @@ class RequestController extends Controller
                 if($qQty->save()){
                   // check status in request tools status to fullfill request if stock available
                   // get stock code by main_stock_code
-                  $stk = Stock::selectRaw('stock.stock.main_stock_code, stock.stock.stock_code, stock.stock.menu_page, SUM(stock.qty.qty) as qty')
+                  $stk = Stock::selectRaw('stock.stock.main_stock_code, stock.stock.stock_code, stock.stock.page_code, SUM(stock.qty.qty) as qty')
                     ->join('stock.qty', 'stock.qty.main_stock_code', '=', 'stock.stock.main_stock_code')
                     ->where(['stock.stock.main_stock_code' => $main_stock_code])
-                    ->groupBy(['stock.stock.main_stock_code', 'stock.stock.stock_code', 'stock.stock.menu_page'])->first();
+                    ->groupBy(['stock.stock.main_stock_code', 'stock.stock.stock_code', 'stock.stock.page_code'])->first();
                   // get outstanding fullfillment
                   $rtd = ReqToolsDetail::selectRaw('document.request_tools_detail.req_tools_code, document.request_tools_detail.stock_code, document.request_tools_detail.req_tools_qty')
                     ->join('document.request_tools','document.request_tools_detail.req_tools_code', '=', 'document.request_tools.req_tools_code')
                     ->where([
                       'document.request_tools_detail.stock_code' => $stk->stock_code,
-                      'document.request_tools.menu_page' => $stk->menu_page,
+                      'document.request_tools.page_code' => $stk->page_code,
                       'document.request_tools_detail.fullfillment' => 0
                     ])->get();
 
@@ -400,7 +400,7 @@ class RequestController extends Controller
                     $stock_qty = $stk->qty;
                     // process update status for waiting list fullfillment in request tools
                     foreach($rtd AS $i => $row){
-                      if($this->_check_qty($row->req_tools_qty, $stk->stock_code, $stk->menu_page)){
+                      if($this->_check_qty($row->req_tools_qty, $stk->stock_code, $stk->page_code)){
                         ReqToolsDetail::where([
                           'req_tools_code' => $row->req_tools_code,
                           'stock_code' => $row->stock_code
@@ -474,8 +474,8 @@ class RequestController extends Controller
         // whole query
         $sup = PO::selectRaw('document.purchase_order.*, (SELECT count(po_code) FROM document.purchase_order_detail WHERE po_code=document.purchase_order.po_code) as sum_item, master.master_status.status_label, master.master_page.page_name')
         ->join('master.master_status', 'master.master_status.status_code', '=', 'document.purchase_order.status')
-        ->join('master.master_page', 'master.master_page.page_code', '=', 'document.purchase_order.menu_page_destination')
-        ->where(['document.purchase_order.menu_page' => $input['menu_page']])
+        ->join('master.master_page', 'master.master_page.page_code', '=', 'document.purchase_order.page_code_destination')
+        ->where(['document.purchase_order.page_code' => $input['page_code']])
         ->whereIn('document.purchase_order.status', ['ST02']);
 
         // where condition

@@ -11,7 +11,7 @@ class CabinetModel extends Model {
 
     protected $fillable = [
         'stock_cabinet_code',
-        'menu_page',
+        'page_code',
         'cabinet_code',
         'stock_code'
     ];

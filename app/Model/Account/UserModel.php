@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace App\Model\Account;
 
@@ -12,9 +12,7 @@ class UserModel extends Model {
     protected $fillable = [
         'nik',
         'pwd_hash',
-        'company_code',
-        'department_code',
-        'division_code',
+        'group_code',
         'last_login',
         'status_code'
     ];

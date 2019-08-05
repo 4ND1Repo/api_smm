@@ -44,11 +44,11 @@ class CabinetController extends Controller
     }
 
     public function get(Request $r, $p=NULL){
-        return response()->json(Api::response(true,"Sukses",Cabinet::where(['menu_page' => $p])->get()),200);
+        return response()->json(Api::response(true,"Sukses",Cabinet::where(['page_code' => $p])->get()),200);
     }
 
     public function add(Request $r){
-        if($r->has('menu_page') && $r->has('cabinet_name') && $r->has('cabinet_description')){
+        if($r->has('page_code') && $r->has('cabinet_name') && $r->has('cabinet_description')){
             $cab = new Cabinet;
             $cab->cabinet_code = $this->__generate_code();
             $cab->cabinet_name = $r->cabinet_name;
@@ -58,7 +58,7 @@ class CabinetController extends Controller
             }
             $cab->cabinet_description = $r->cabinet_description;
             $cab->is_child = (int)1;
-            $cab->menu_page = $r->menu_page;
+            $cab->page_code = $r->page_code;
             if($cab->save()){
                 if($r->has('parent_cabinet_code')){
                     if(!empty($r->parent_cabinet_code))
@@ -73,16 +73,16 @@ class CabinetController extends Controller
     }
 
     public function delete(Request $r){
-        MainCabinet::where(['cabinet_code' => $r->cabinet_code, 'menu_page' => $r->menu_page])->delete();
+        MainCabinet::where(['cabinet_code' => $r->cabinet_code, 'page_code' => $r->page_code])->delete();
         $cb = Cabinet::where(['cabinet_code' => $r->cabinet_code])->first()->toArray();
         $sts = Cabinet::where(['cabinet_code' => $r->cabinet_code])->delete();
         if($sts){
             // if parent not null
             if(!is_null($cb['parent_cabinet_code'])){
                 // check child parent is null
-                $cbt = Cabinet::where(['parent_cabinet_code' => $cb['parent_cabinet_code'], 'menu_page' => $r->menu_page])->get();
+                $cbt = Cabinet::where(['parent_cabinet_code' => $cb['parent_cabinet_code'], 'page_code' => $r->page_code])->get();
                 if($cbt->count() == 0)
-                    Cabinet::where(['cabinet_code' => $cb['parent_cabinet_code'], 'menu_page' => $r->menu_page])->update(['is_child' => 1]);
+                    Cabinet::where(['cabinet_code' => $cb['parent_cabinet_code'], 'page_code' => $r->page_code])->update(['is_child' => 1]);
             }
         }
         
@@ -92,7 +92,7 @@ class CabinetController extends Controller
     public function tree(Request $r){
         $data = [];
 
-        $cb = Cabinet::where(['parent_cabinet_code' => ($r->parent == "#")?NULL:$r->parent, 'menu_page' => $r->p])->orderBy('cabinet_name','ASC')->get();
+        $cb = Cabinet::where(['parent_cabinet_code' => ($r->parent == "#")?NULL:$r->parent, 'page_code' => $r->p])->orderBy('cabinet_name','ASC')->get();
         if($cb->count() > 0){
             foreach($cb AS $row){
                 // check has child

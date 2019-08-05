@@ -12,7 +12,7 @@ class StockModel extends Model {
     protected $fillable = [
         'main_stock_code',
         'stock_code',
-        'menu_page',
+        'page_code',
         'nik',
         'main_stock_date'
     ];
@@ -28,7 +28,7 @@ class StockModel extends Model {
     }
 
     public function page(){
-        return $this->belongsTo('App\Model\Master\PageModel','page_code','menu_page');
+        return $this->belongsTo('App\Model\Master\PageModel','page_code','page_code');
     }
 
 }

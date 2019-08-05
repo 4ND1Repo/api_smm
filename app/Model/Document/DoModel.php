@@ -12,7 +12,7 @@ class DoModel extends Model {
     protected $fillable = [
         'do_code',
         'po_code',
-        'menu_page',
+        'page_code',
         'main_stock_code',
         'do_qty',
         'create_by',

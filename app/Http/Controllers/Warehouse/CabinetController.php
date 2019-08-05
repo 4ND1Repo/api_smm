@@ -44,7 +44,7 @@ class CabinetController extends Controller
     }
 
     public function __check_data($r){
-        $find = Cabinet::where(['menu_page' => $r->menu_page, 'main_stock_code' => $r->main_stock_code]);
+        $find = Cabinet::where(['page_code' => $r->page_code, 'main_stock_code' => $r->main_stock_code]);
         if($find->count() > 0)
             return $find->get();
         return false;
@@ -54,7 +54,7 @@ class CabinetController extends Controller
         if(! $this->__check_data($r)){
             $cab = new Cabinet;
             $cab->stock_cabinet_code = $this->_generate_prefix();
-            $cab->menu_page = $r->menu_page;
+            $cab->page_code = $r->page_code;
             $cab->cabinet_code = $r->cabinet_code;
             $cab->main_stock_code = $r->main_stock_code;
             $cab->save();
@@ -97,7 +97,7 @@ class CabinetController extends Controller
         ->join('master.master_cabinet','master.master_cabinet.cabinet_code','=','stock.cabinet.cabinet_code')
         ->join('stock.stock','stock.cabinet.main_stock_code','=','stock.stock.main_stock_code')
         ->join('master.master_stock','stock.stock.stock_code','=','master.master_stock.stock_code')
-        ->where(['stock.cabinet.menu_page' => $input['menu_page'], 'stock.cabinet.cabinet_code' => $input['cabinet_code']]);
+        ->where(['stock.cabinet.page_code' => $input['page_code'], 'stock.cabinet.cabinet_code' => $input['cabinet_code']]);
 
         // where condition
         if(isset($input['query'])){

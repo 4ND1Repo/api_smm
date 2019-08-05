@@ -11,7 +11,7 @@ class RequestToolsModel extends Model {
 
     protected $fillable = [
         'req_tools_code',
-        'menu_page',
+        'page_code',
         'req_tools_date',
         'req_nik',
         'create_by',

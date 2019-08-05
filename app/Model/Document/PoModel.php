@@ -11,8 +11,8 @@ class PoModel extends Model {
 
     protected $fillable = [
         'po_code',
-        'menu_page',
-        'menu_page_destination',
+        'page_code',
+        'page_code_destination',
         'po_date',
         'nik',
         'create_by',

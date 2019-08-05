@@ -11,7 +11,7 @@ class MenuModel extends Model {
 
     protected $fillable = [
         'id_menu',
-        'menu_page',
+        'page_code',
         'menu_name',
         'menu_url',
         'menu_icon',

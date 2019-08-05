@@ -154,6 +154,27 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
                 $router->post('add', 'Account\ComplaintController@add');
                 $router->post('infinite/{id}', 'Account\ComplaintController@infinite');
             });
+
+            // notification group
+            $router->group(['prefix' => 'notification'], function() use($router){
+                $router->post('/', 'Account\NotificationController@user');
+                $router->post('read', 'Account\NotificationController@read');
+                $router->post('add', 'Account\NotificationController@add');
+                $router->post('infinite/{id}', 'Account\NotificationController@infinite');
+            });
+
+            // user group
+            $router->group(['prefix' => 'group'], function() use($router){
+                $router->get("/", 'Account\UserGroupController@index');
+                $router->get("find/{id}", 'Account\UserGroupController@find');
+                $router->post("menu", 'Account\UserGroupController@menu');
+                $router->post("add", 'Account\UserGroupController@add');
+                $router->post("edit", 'Account\UserGroupController@edit');
+                $router->post("delete", 'Account\UserGroupController@delete');
+                $router->post("role", 'Account\UserGroupController@role');
+                $router->post("genRole", 'Account\UserGroupController@genRole');
+                $router->post("grid", 'Account\UserGroupController@grid');
+            });
         });
     });
 

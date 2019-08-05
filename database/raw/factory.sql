@@ -16,6 +16,21 @@ GO
 
 
 
+
+CREATE TABLE [document].[notification](
+	[notification_id] [bigint] NOT NULL IDENTITY(1,1),
+	[notification_from] [varchar](10) NULL,
+	[notification_to] [varchar](10) NULL,
+	[notification_read] [bit] NOT NULL DEFAULT((0)),
+	[notification_send] [bit] NOT NULL DEFAULT((0)),
+	[notification_title] [varchar](100) NULL,
+	[notification_content] [varchar](255) NOT NULL,
+	[notification_icon] [varchar](100) NULL,
+	[notification_url] [varchar](255) NULL,
+	[notification_time] [datetime] NOT NULL DEFAULT(GETDATE())
+) ON [PRIMARY]
+GO
+
 CREATE TABLE [document].[complaint](
 	[complaint_id] [bigint] NOT NULL IDENTITY(1,1),
 	[complaint_to] [varchar](10) NULL,
@@ -30,7 +45,7 @@ GO
 
 CREATE TABLE [document].[request_tools](
 	[req_tools_code] [varchar](20) NOT NULL,
-	[menu_page] [varchar](20) NOT NULL,
+	[page_code] [varchar](20) NOT NULL,
 	[req_tools_date] [date] NOT NULL DEFAULT(GETDATE()),
 	[req_nik] [varchar](10) NULL,
 	[name_of_request] [varchar](30) NOT NULL,
@@ -55,8 +70,8 @@ GO
 
 CREATE TABLE [document].[purchase_order](
 	[po_code] [varchar](20) NOT NULL,
-	[menu_page] [varchar](20) NOT NULL,
-	[menu_page_destination] [varchar](20) NOT NULL,
+	[page_code] [varchar](20) NOT NULL,
+	[page_code_destination] [varchar](20) NOT NULL,
 	[po_date] [date] NOT NULL DEFAULT(GETDATE()),
 	[nik] [varchar](10) NOT NULL,
 	[status] [varchar](10) NOT NULL DEFAULT(('ST06')),
@@ -88,7 +103,7 @@ GO
 CREATE TABLE [document].[delivery_order](
 	[do_code] [varchar](20) NOT NULL,
 	[po_code] [varchar](20) NOT NULL,
-	[menu_page] [varchar](20) NOT NULL,
+	[page_code] [varchar](20) NOT NULL,
 	[main_stock_code] [varchar](20) NOT NULL,
 	[do_qty] [decimal](20,2) NOT NULL,
 	[create_by] [varchar](10) NOT NULL,
@@ -139,7 +154,7 @@ GO
 CREATE TABLE [stock].[stock](
 	[main_stock_code] [varchar](20) NOT NULL,
 	[stock_code] [varchar](10) NOT NULL,
-	[menu_page] [varchar](10) NOT NULL,
+	[page_code] [varchar](10) NOT NULL,
 	[nik] [varchar](10) NOT NULL,
 	[main_stock_date] [datetime] NOT NULL DEFAULT(GETDATE()),
 ) ON [PRIMARY]
@@ -183,7 +198,7 @@ CREATE TABLE [stock].[opname](
 GO
 CREATE TABLE [stock].[cabinet](
 	[stock_cabinet_code] [varchar](10) NOT NULL,
-	[menu_page] [varchar](20) NOT NULL,
+	[page_code] [varchar](20) NOT NULL,
 	[cabinet_code] [varchar](10) NOT NULL,
 	[main_stock_code] [varchar](20) NOT NULL
 ) ON [PRIMARY]
@@ -208,7 +223,7 @@ CREATE TABLE [master].[master_cabinet](
 	[cabinet_code] [varchar](10) NOT NULL,
 	[cabinet_name] [varchar](30) NULL,
 	[cabinet_description] [varchar](255) NULL,
-	[menu_page] [varchar](20) NULL,
+	[page_code] [varchar](20) NULL,
 	[parent_cabinet_code] [varchar](10) NULL,
 	[is_child] [integer] NULL DEFAULT((1)),
 	[status_code] [varchar](4) NULL DEFAULT('ST01'),
@@ -253,18 +268,35 @@ CREATE TABLE [master].[master_status](
 GO
 CREATE TABLE [master].[master_menu](
 	[id_menu] [integer] NOT NULL,
-	[menu_page] [varchar](20) NOT NULL,
 	[menu_name] [varchar](20) NOT NULL,
 	[menu_url] [varchar](50) NOT NULL,
 	[menu_icon] [varchar](50) NULL,
 	[id_parent] [integer] NULL
 ) ON [PRIMARY]
 GO
+CREATE TABLE [account].[user_group](
+	[group_code] [varchar](10) NOT NULL,
+	[group_name] [varchar](100) NOT NULL,
+	[page_code] [varchar](10) NOT NULL,
+	[company_code] [varchar](10) NULL,
+	[department_code] [varchar](10) NULL,
+	[division_code] [varchar](10) NULL,
+) ON [PRIMARY]
+GO
 CREATE TABLE [account].[user_menu](
-	[company_code] [varchar](20) NULL,
-	[department_code] [varchar](20) NULL,
-	[division_code] [varchar](20) NULL,
+	[group_code] [varchar](10) NOT NULL,
 	[id_menu] [integer] NOT NULL,
+	[add] [bit] NOT NULL DEFAULT((0)),
+	[edit] [bit] NOT NULL DEFAULT((0)),
+	[del] [bit] NOT NULL DEFAULT((0))
+) ON [PRIMARY]
+GO
+CREATE TABLE [account].[user](
+	[nik] [varchar](20) NOT NULL,
+	[pwd_hash] [varchar](255) NULL,
+	[group_code] [varchar](10) NOT NULL,
+	[status_code] [varchar](4) NULL,
+	[last_login] [datetime] NULL,
 ) ON [PRIMARY]
 GO
 CREATE TABLE [account].[user_biodata](
@@ -284,16 +316,6 @@ CREATE TABLE [account].[user_identity](
 	[identity_number] [varchar](50) NULL,
 	[address] [varchar](150) NULL,
 	[post_code] [varchar](10) NULL,
-) ON [PRIMARY]
-GO
-CREATE TABLE [account].[user](
-	[nik] [varchar](20) NOT NULL,
-	[pwd_hash] [varchar](255) NULL,
-	[company_code] [varchar](10) NULL,
-	[department_code] [varchar](10) NULL,
-	[division_code] [varchar](10) NULL,
-	[status_code] [varchar](4) NULL,
-	[last_login] [datetime] NULL,
 ) ON [PRIMARY]
 GO
 
@@ -401,40 +423,31 @@ INSERT INTO [master].[master_supplier](supplier_code, supplier_name, supplier_ad
 ('SPLR1', 'Supplier 1', 'Bandung', '02289874779', 'CAT1', 'BDG','ST01'),
 ('SPLR2', 'Supplier 2', 'Jakarta', '02178236423', 'CAT3', 'JKT','ST01')
 GO
-INSERT INTO [master].[master_menu](id_menu,menu_page, menu_name, menu_url,menu_icon,id_parent) VALUES
-(1, 'wh', 'Beranda', '/', 'fa fa-home', NULL),
-(2, 'wh', 'Request', '/', 'fa fa-upload', NULL),
-(3, 'wh', 'Purchase Order', '/req/po', 'fa fa-file', 2),
-(4, 'wh', 'Tentang', '/about', 'fa fa-link', NULL),
-(5, 'wh', 'Master', '/', 'fa fa-box', NULL),
-(6, 'wh', 'Stock', '/mst/stock', 'fa fa-boxes', 5),
-(7, 'mk', 'Beranda', '/', 'fa fa-home', NULL),
-(8, 'mk', 'Master', '/', 'fa fa-box', NULL),
-(9, 'mk', 'Supplier', '/mst/supplier', 'fa fa-users', 8),
-(10, 'wh', 'Stock', '/', 'fa fa-boxes', NULL),
-(11, 'wh', 'Rak', '/stk/cabinet', 'fa fa-users', 10),
-(12, 'wh', 'Stok', '/stk/stock', 'fa fa-boxes', 10),
-(13, 'wh', 'Riwayat', '/stk/history', 'fa fa-file-alt', 10),
-(14, 'wh', 'Barang', '/req/tools', 'fa fa-hammer', 2),
-(15, 'wh', 'Satuan', '/mst/measure', 'fa fa-balance-scale', 5),
-(16, 'wh', 'Kategori', '/mst/category', 'fa fa-box-open', 5),
-(17, 'wh', 'Stok Kurang', '/stk/list_buy', 'fa fa-list-alt', 10),
-(18, 'wh', 'Terima Barang', '/req/do', 'fa fa-file-alt', 2),
-(19, 'pur', 'Beranda', '/', 'fa fa-home', NULL),
-(20, 'pur', 'Request', '/', 'fa fa-upload', NULL),
-(21, 'pur', 'Pembelian(PO)', '/req/po', 'fa fa-file', 20),
-(22, 'pur', 'Master', '/', 'fa fa-box', NULL),
-(23, 'pur', 'Supplier', '/mst/supplier', 'fa fa-users', 22),
-(24, 'wh', 'Stok Opname', '/stk/opname', 'fa fa-link', 10),
-(25, 'su', 'Dashboard', '/', 'fa fa-home', NULL),
-(26, 'su', 'Management', '/', 'fa fa-book', NULL),
-(27, 'su', 'User', '/mng/user', 'fa fa-users-cog', 26),
-(28, 'su', 'Menu', '/mng/menu', 'fa fa-clipboard', 26),
-(29, 'su', 'Role Menu', '/mng/role_menu', 'fa fa-clipboard-list', 26),
-(30, 'su', 'Role User', '/mng/role_user', 'fa fa-user-cog', 26),
-(31, 'su', 'Master', '/', 'fa fa-box', NULL),
-(32, 'su', 'Icon', '/mst/icon', 'fa fa-grip-horizontal', 31),
-(33, 'pur', 'Riwayat', '/req/po/history', 'fa fa-file-alt', 20)
+INSERT INTO [master].[master_menu](id_menu, menu_name, menu_url,menu_icon,id_parent) VALUES
+(1, 'Beranda', '/', 'fa fa-home', NULL),
+(2, 'Request', '/', 'fa fa-upload', NULL),
+(3, 'Purchase Order', '/req/po', 'fa fa-file', 2),
+(4, 'Barang', '/req/tools', 'fa fa-hammer', 2),
+(5, 'Terima Barang', '/req/do', 'fa fa-file-alt', 2),
+(6, 'Pembelian(PO)', '/req/po', 'fa fa-file', 2),
+(7, 'Riwayat', '/req/po/history', 'fa fa-file-alt', 2),
+(8, 'Tentang', '/about', 'fa fa-link', NULL),
+(9, 'Master', '/', 'fa fa-box', NULL),
+(10, 'Barang', '/mst/stock', 'fa fa-boxes', 9),
+(11, 'Supplier', '/mst/supplier', 'fa fa-users', 9),
+(12, 'Icon', '/mst/icon', 'fa fa-grip-horizontal', 9),
+(13, 'Satuan', '/mst/measure', 'fa fa-balance-scale', 9),
+(14, 'Kategori', '/mst/category', 'fa fa-box-open', 9),
+(15, 'Stok', '/', 'fa fa-boxes', NULL),
+(16, 'Barang', '/stk/stock', 'fa fa-boxes', 15),
+(17, 'Rak', '/stk/cabinet', 'fa fa-users', 15),
+(18, 'Riwayat', '/stk/history', 'fa fa-file-alt', 15),
+(19, 'Stok Kurang', '/stk/list_buy', 'fa fa-list-alt', 15),
+(20, 'Stok Opname', '/stk/opname', 'fa fa-link', 15),
+(21, 'Management', '/', 'fa fa-book', NULL),
+(22, 'User', '/mng/user', 'fa fa-users-cog', 21),
+(23, 'Menu', '/mng/menu', 'fa fa-clipboard', 21),
+(24, 'Group', '/mng/group', 'fa fa-users', 21)
 GO
 INSERT INTO [master].[master_company](company_code,company_name) VALUES
 ('CP01','Sarana Makin Mulia, PT.')
@@ -450,46 +463,50 @@ INSERT INTO [master].[master_division](division_code,division_name,department_co
 ('SMDV04', 'Division 02', 'SMDP02', 'CP01'),
 ('SMDV05', 'Division 03', 'SMDP02', 'CP01')
 GO
-INSERT INTO [account].[user_menu](company_code, department_code, division_code, id_menu) VALUES
-('CP01', 'SMDP01', 'SMDV01', 1),
-('CP01', 'SMDP01', 'SMDV01', 2),
-('CP01', 'SMDP01', 'SMDV01', 3),
-('CP01', 'SMDP01', 'SMDV01', 4),
-('CP01', 'SMDP01', 'SMDV01', 5),
-('CP01', 'SMDP01', 'SMDV01', 6),
-('CP01', 'SMDP02', 'SMDV04', 7),
-('CP01', 'SMDP02', 'SMDV04', 8),
-('CP01', 'SMDP02', 'SMDV04', 9),
-('CP01', 'SMDP01', 'SMDV01', 10),
-('CP01', 'SMDP01', 'SMDV01', 11),
-('CP01', 'SMDP01', 'SMDV01', 12),
-('CP01', 'SMDP01', 'SMDV01', 13),
-('CP01', 'SMDP01', 'SMDV01', 14),
-('CP01', 'SMDP01', 'SMDV01', 15),
-('CP01', 'SMDP01', 'SMDV01', 16),
-('CP01', 'SMDP01', 'SMDV01', 17),
-('CP01', 'SMDP01', 'SMDV01', 18),
-('CP01', 'SMDP02', 'SMDV03', 19),
-('CP01', 'SMDP02', 'SMDV03', 20),
-('CP01', 'SMDP02', 'SMDV03', 21),
-('CP01', 'SMDP02', 'SMDV03', 22),
-('CP01', 'SMDP02', 'SMDV03', 23),
-('CP01', 'SMDP01', 'SMDV01', 24),
-(NULL, NULL, NULL, 25),
-(NULL, NULL, NULL, 26),
-(NULL, NULL, NULL, 27),
-(NULL, NULL, NULL, 28),
-(NULL, NULL, NULL, 29),
-(NULL, NULL, NULL, 30),
-(NULL, NULL, NULL, 31),
-(NULL, NULL, NULL, 32),
-('CP01', 'SMDP02', 'SMDV03', 33)
+INSERT INTO [account].[user_menu](group_code, id_menu, "add", "edit", "del") VALUES
+('USGP001', 1, 1, 1, 1),
+('USGP001', 9, 1, 1, 1),
+('USGP001', 12, 1, 1, 1),
+('USGP001', 21, 1, 1, 1),
+('USGP001', 22, 1, 1, 1),
+('USGP001', 23, 1, 1, 1),
+('USGP001', 24, 1, 1, 1),
+('USGP002', 1, 1, 1, 1),
+('USGP002', 2, 1, 1, 1),
+('USGP002', 3, 1, 1, 1),
+('USGP002', 4, 1, 1, 1),
+('USGP002', 5, 1, 1, 1),
+('USGP002', 8, 1, 1, 1),
+('USGP002', 9, 1, 1, 1),
+('USGP002', 10, 1, 1, 1),
+('USGP002', 13, 1, 1, 1),
+('USGP002', 14, 1, 1, 1),
+('USGP002', 15, 1, 1, 1),
+('USGP002', 16, 1, 1, 1),
+('USGP002', 17, 1, 1, 1),
+('USGP002', 18, 1, 1, 1),
+('USGP002', 19, 1, 1, 1),
+('USGP002', 20, 1, 1, 1),
+('USGP003', 1, 1, 1, 1),
+('USGP003', 9, 1, 1, 1),
+('USGP003', 11, 1, 1, 1),
+('USGP004', 1, 1, 1, 1),
+('USGP004', 2, 1, 1, 1),
+('USGP004', 6, 1, 1, 1),
+('USGP004', 7, 1, 1, 1),
+('USGP004', 9, 1, 1, 1),
+('USGP004', 11, 1, 1, 1)
 GO
-INSERT INTO [account].[user](nik,pwd_hash,company_code,department_code,division_code,status_code) VALUES
-('superuser', '$2y$12$rbfkWNlw4gj7.OxIm80UsOte/uvI9Cb3Ndn6/TlGHty5LtT3N49vW', NULL, NULL, NULL, 'ST01'),
-('SMM01001', '$2y$12$rbfkWNlw4gj7.OxIm80UsOte/uvI9Cb3Ndn6/TlGHty5LtT3N49vW', 'CP01', 'SMDP01', 'SMDV01', 'ST01'),
-('SMM01002', '$2y$12$rbfkWNlw4gj7.OxIm80UsOte/uvI9Cb3Ndn6/TlGHty5LtT3N49vW', 'CP01', 'SMDP02', 'SMDV04', 'ST01'),
-('SMM01003', '$2y$12$rbfkWNlw4gj7.OxIm80UsOte/uvI9Cb3Ndn6/TlGHty5LtT3N49vW', 'CP01', 'SMDP02', 'SMDV03', 'ST01')
+INSERT INTO [account].[user_group](group_code, group_name, page_code, company_code, department_code, division_code) VALUES
+('USGP001', 'Superuser', 'su', NULL, NULL, NULL),
+('USGP002', 'Gudang Umum', 'wh', 'CP01', 'SMDP01', 'SMDV01'),
+('USGP003', 'Marketing', 'mk', 'CP01', 'SMDP02', 'SMDV04'),
+('USGP004', 'Pembelian', 'pur', 'CP01', 'SMDP02', 'SMDV03')
+INSERT INTO [account].[user](nik,pwd_hash,group_code,status_code) VALUES
+('superuser', '$2y$12$rbfkWNlw4gj7.OxIm80UsOte/uvI9Cb3Ndn6/TlGHty5LtT3N49vW', 'USGP001', 'ST01'),
+('SMM01001', '$2y$12$rbfkWNlw4gj7.OxIm80UsOte/uvI9Cb3Ndn6/TlGHty5LtT3N49vW', 'USGP002', 'ST01'),
+('SMM01002', '$2y$12$rbfkWNlw4gj7.OxIm80UsOte/uvI9Cb3Ndn6/TlGHty5LtT3N49vW', 'USGP003', 'ST01'),
+('SMM01003', '$2y$12$rbfkWNlw4gj7.OxIm80UsOte/uvI9Cb3Ndn6/TlGHty5LtT3N49vW', 'USGP004', 'ST01')
 GO
 
 

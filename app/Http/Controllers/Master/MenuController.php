@@ -30,7 +30,7 @@ class MenuController extends Controller
     }
 
     public function parent(Request $r){
-        return response()->json(Api::response(true,"Sukses",Menu::selectRaw('master.master_menu.*, menu_parent.parent')->leftJoin(DB::raw("(SELECT id_menu AS id_parent, menu_name AS parent FROM master.master_menu) AS menu_parent"), 'menu_parent.id_parent','=','master.master_menu.id_parent')->where(['menu_page' => $r->menu_page])->get()),200);
+        return response()->json(Api::response(true,"Sukses",Menu::selectRaw('master.master_menu.*, menu_parent.parent')->leftJoin(DB::raw("(SELECT id_menu AS id_parent, menu_name AS parent FROM master.master_menu) AS menu_parent"), 'menu_parent.id_parent','=','master.master_menu.id_parent')->get()),200);
     }
 
     private function _exists($r){
@@ -50,7 +50,6 @@ class MenuController extends Controller
             $menu->menu_url = $r->menu_url;
             $menu->id_parent = $r->id_parent;
             $menu->menu_icon = $r->menu_icon;
-            $menu->menu_page = $r->menu_page;
             $menu->save();
             return response()->json(Api::response(true,"Success"),200);
         }
@@ -68,8 +67,7 @@ class MenuController extends Controller
         $column_search = [
             'menu_name',
             'menu_url',
-            'menu_parent.parent',
-            'page.page'
+            'menu_parent.parent'
         ];
 
         // generate default
@@ -80,8 +78,7 @@ class MenuController extends Controller
             );
 
         // whole query
-        $query = Menu::selectRaw('master.master_menu.*, page.page, menu_parent.parent')
-            ->join(DB::raw('(SELECT page_code AS menu_page, page_name AS page FROM master.master_page) AS page'),'page.menu_page','=','master.master_menu.menu_page')
+        $query = Menu::selectRaw('master.master_menu.*, menu_parent.parent')
             ->leftJoin(DB::raw('(SELECT id_menu AS id_parent, menu_name AS parent FROM master.master_menu) AS menu_parent'),'menu_parent.id_parent','=','master.master_menu.id_parent');
 
         // where condition
