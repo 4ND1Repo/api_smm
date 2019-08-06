@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 
 // Embed a model
 use App\Model\Account\UserModel AS User;
+use App\Model\Account\UserGroupModel AS UserGroup;
 
 // Embed a Helper
 use DB;
@@ -73,6 +74,15 @@ class UserController extends Controller
           'count' => User::where(['nik' => $r->nik])->count(),
           'last' => $last
         ];
+        return response()->json(Api::response(1,'Sukses', $data), 200);
+    }
+
+    public function check_group(Request $r){
+        $data = [];
+        $query = User::where('nik', $r->nik)->first();
+        if($query->count() > 0){
+          $data = UserGroup::where(['group_code' => $query->group_code])->first();
+        }
         return response()->json(Api::response(1,'Sukses', $data), 200);
     }
 
@@ -180,6 +190,23 @@ class UserController extends Controller
         ];
 
         return response()->json($data,200);
+    }
+
+    public function autocomplete(Request $r){
+        $return = [];
+
+        $auto = DB::select(DB::raw("SELECT * FROM (
+            SELECT nik, (nik + ' - ' + nik) as user_name
+            FROM account.[user]
+        ) as tmp_table WHERE user_name LIKE '%".$r->find."%'"));
+        if(count($auto) > 0)
+            foreach($auto as $row){
+                $return[] = [
+                    'id' => $row->nik,
+                    'label' => $row->user_name
+                ];
+            }
+        return $return;
     }
 
 }

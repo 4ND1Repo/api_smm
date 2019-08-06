@@ -46,6 +46,7 @@ GO
 CREATE TABLE [document].[request_tools](
 	[req_tools_code] [varchar](20) NOT NULL,
 	[page_code] [varchar](20) NOT NULL,
+	[page_code_from] [varchar](20) NOT NULL,
 	[req_tools_date] [date] NOT NULL DEFAULT(GETDATE()),
 	[req_nik] [varchar](10) NULL,
 	[name_of_request] [varchar](30) NOT NULL,
@@ -407,7 +408,8 @@ INSERT INTO [master].[master_page] VALUES
 ('wh', 'Warehouse'),
 ('mk','Marketing'),
 ('pur','Purchasing'),
-('su','Superuser')
+('su','Superuser'),
+('opr','Operator')
 GO
 INSERT INTO [master].[master_measure] VALUES
 ('MEA001', 'Kg'),

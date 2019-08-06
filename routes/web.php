@@ -135,11 +135,16 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
         // for user account
         $router->group(['prefix' => 'user'], function() use($router){
             $router->get('find/{id}', 'Account\UserController@find');
-            $router->post('check', 'Account\UserController@check');
+            // check group
+            $router->group(['prefix' => 'check'], function() use($router){
+              $router->post('/', 'Account\UserController@check');
+              $router->post('group', 'Account\UserController@check_group');
+            });
             $router->post('grid', 'Account\UserController@grid');
             $router->post('add', 'Account\UserController@add');
             $router->post('edit', 'Account\UserController@edit');
             $router->post('delete', 'Account\UserController@delete');
+            $router->post('autocomplete', 'Account\UserController@autocomplete');
         });
     });
 

@@ -90,6 +90,7 @@ class RequestController extends Controller
         $drt->req_tools_code = $this->_generate_prefix_tools();
         $drt->create_by = $r->nik;
         $drt->page_code = $r->page_code;
+        $drt->page_code_from = $r->page_code_from;
         $drt->name_of_request = $r->name_of_request;
         if($r->has('req_nik')){
             if(!empty($r->req_nik) && !is_null($r->req_nik))
@@ -166,7 +167,10 @@ class RequestController extends Controller
         // whole query
         $sup = ReqTools::selectRaw('document.request_tools.*, (SELECT count(req_tools_code) FROM document.request_tools_detail WHERE req_tools_code=document.request_tools.req_tools_code) as sum_item, master.master_status.status_label')
         ->join('master.master_status', 'master.master_status.status_code', '=', 'document.request_tools.status')
-        ->where(['document.request_tools.page_code' => $input['page_code']]);
+        ->where(function($sup) use($input){
+            $sup->where('document.request_tools.page_code_from', $input['page_code']);
+            $sup->orWhere('document.request_tools.page_code', $input['page_code']);
+        });
 
         // where condition
         if(isset($input['query'])){
@@ -342,11 +346,13 @@ class RequestController extends Controller
     public function add_do(Request $r){
         // record to DO table
         $date = date("Y-m-d H:i:s");
-        foreach($r->data AS $po_code => $row){
-          foreach ($row as $main_stock_code => $qty) {
-            if($qty > 0){
+        foreach ($r->do as $po_code => $row) {
+          foreach ($row as $main_stock_code => $do_code) {
+              // get qty
+              $qty = $r->data[$po_code][$main_stock_code];
+
               $do = new DocDO;
-              $do->do_code = $r->do_code;
+              $do->do_code = $do_code;
               $do->po_code = $po_code;
               $do->page_code = $r->page_code;
               $do->main_stock_code = $main_stock_code;
@@ -364,7 +370,7 @@ class RequestController extends Controller
                 $qQty->stock_notes = 'Pembelian';
                 $qQty->stock_date = $date;
                 $qQty->nik = $r->nik;
-                $qQty->do_code = $r->do_code;
+                $qQty->do_code = $do_code;
                 if($qQty->save()){
                   // check status in request tools status to fullfill request if stock available
                   // get stock code by main_stock_code
@@ -407,7 +413,6 @@ class RequestController extends Controller
                   }
                 }
               }
-            }
           }
 
           // check qty PO and DO to change status
@@ -420,7 +425,8 @@ class RequestController extends Controller
     }
 
     public function check_do(Request $r){
-        $query = DocDO::where(['do_code' => $r->do_code, 'po_code' => $r->po_code]);
+        $query = DocDO::leftJoin('document.purchase_order_detail', 'document.purchase_order_detail.po_code', '=', 'document.delivery_order.po_code')
+            ->where(['do_code' => $r->do_code, 'supplier_code' => $r->supplier_code]);
         $cnt = $query->count() == 0;
         return response()->json(Api::response($cnt,!$cnt?"Nomor Surat Jalan sudah ada":"Aman"),200);
     }

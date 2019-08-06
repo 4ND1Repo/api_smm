@@ -92,9 +92,13 @@ class NotificationController extends Controller
         $where['notification_send'] = 0;
 
         $query = Notification::where($where);
-        $query2 = Notification::where($where)->take(10)->orderBy('notification_id', 'ASC');
+        $cnt = $query->count();
+        $query2 = Notification::where($where);
+        if($r->init == 1)
+          $query2->skip(($cnt-10));
+        $query2->take(10)->orderBy('notification_id', 'ASC');
 
-        $data['count'] = $query->count();
+        $data['count'] = $cnt;
         $data['content'] = ($query->count() > 0 || $r->init == 1)? $query2->get() : [];
         if($data['count'] > 0){
           $arrId = [];

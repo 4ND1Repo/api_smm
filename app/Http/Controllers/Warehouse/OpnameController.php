@@ -45,7 +45,9 @@ class OpnameController extends Controller
       $query = Opname::selectRaw('stock.opname.*, master.master_stock.*')
           ->join('stock.stock', 'stock.stock.main_stock_code','=','stock.opname.main_stock_code')
           ->join('master.master_stock', 'master.master_stock.stock_code','=','stock.stock.stock_code')
-          ->where(['stock.opname.main_stock_code' => $main_stock_code, 'opname_date_from' => $opname_date_from])->first();
+          ->where(['stock.opname.main_stock_code' => $main_stock_code, 'opname_date_from' => $opname_date_from])
+          ->orderBy('stock.opname.create_date','DESC')
+          ->first();
       return response()->json(Api::response(true, 'Sukses', $query),200);
     }
 
