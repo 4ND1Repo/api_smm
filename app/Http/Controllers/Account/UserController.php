@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 
 // Embed a model
 use App\Model\Account\UserModel AS User;
+use App\Model\Account\UserBiodataModel AS UserBiodata;
 use App\Model\Account\UserGroupModel AS UserGroup;
 
 // Embed a Helper
@@ -110,6 +111,21 @@ class UserController extends Controller
       return response()->json(Api::response(1,'Sukses'), 200);
     }
 
+    public function edit_field(Request $r){
+      $data = (array) $r->post();
+      $nik = $data['nik'];
+      unset($data['nik']);
+      $cnt = UserBiodata::where(['nik' => $nik])->count();
+      if($cnt == 0){
+        $bio = new UserBiodata;
+        $bio->nik = $nik;
+        $bio->save();
+      }
+
+      UserBiodata::where(['nik' => $nik])->update($data);
+      return response()->json(Api::response(1,'Sukses'), 200);
+    }
+
     public function delete(Request $r){
         // not check history transaction
         User::where(['nik' => $r->id])->delete();
@@ -207,6 +223,25 @@ class UserController extends Controller
                 ];
             }
         return $return;
+    }
+
+    public function photo(Request $r){
+        $return = [];
+        User::where(['nik' => $r->nik])->update(['photo' => $r->photo]);
+        return response()->json(Api::response(true, "berhasil update photo",[]),200);
+    }
+
+
+    // for biodata
+    public function biodata(Request $r){
+        $return = [];
+        $q = UserBiodata::where(['nik' => $r->nik]);
+        if($q->count() == 0)
+          return response()->json(Api::response(false, "Data kosong",$return),200);
+
+        $return = $q->first();
+
+        return response()->json(Api::response(true, "berhasil update photo",$return),200);
     }
 
 }

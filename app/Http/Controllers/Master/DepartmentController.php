@@ -26,7 +26,7 @@ class DepartmentController extends Controller
     }
 
     public function index(Request $r){
-        return Api::response(true,"Sukses",Department::where(['company_code'=>$r->company_code])->get());
+        return response()->json(Api::response(true,"Sukses",Department::where(['company_code'=>$r->company_code])->get()),200);
     }
 
 }

@@ -142,9 +142,18 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
             });
             $router->post('grid', 'Account\UserController@grid');
             $router->post('add', 'Account\UserController@add');
-            $router->post('edit', 'Account\UserController@edit');
+            // edit user group
+            $router->group(['prefix' => 'edit'], function() use($router){
+              $router->post('/', 'Account\UserController@edit');
+              $router->post('field', 'Account\UserController@edit_field');
+            });
             $router->post('delete', 'Account\UserController@delete');
             $router->post('autocomplete', 'Account\UserController@autocomplete');
+
+            // biodata group
+            $router->group(['prefix' => 'biodata'], function() use($router){
+              $router->post('/', 'Account\UserController@biodata');
+            });
         });
     });
 
@@ -179,6 +188,13 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
                 $router->post("role", 'Account\UserGroupController@role');
                 $router->post("genRole", 'Account\UserGroupController@genRole');
                 $router->post("grid", 'Account\UserGroupController@grid');
+            });
+
+            // photo group
+
+            // user group
+            $router->group(['prefix' => 'photo'], function() use($router){
+                $router->post("update", 'Account\UserController@photo');
             });
         });
     });

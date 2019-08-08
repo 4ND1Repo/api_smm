@@ -242,6 +242,11 @@ CREATE TABLE [master].[master_company](
 	[company_description] [varchar](255) NULL
 ) ON [PRIMARY]
 GO
+CREATE TABLE [master].[marital](
+	[marital_code] [varchar](10) NOT NULL,
+	[marital_name] [varchar](50) NULL
+) ON [PRIMARY]
+GO
 CREATE TABLE [master].[master_department](
 	[department_code] [varchar](10) NOT NULL,
 	[company_code] [varchar](10) NOT NULL,
@@ -297,18 +302,22 @@ CREATE TABLE [account].[user](
 	[pwd_hash] [varchar](255) NULL,
 	[group_code] [varchar](10) NOT NULL,
 	[status_code] [varchar](4) NULL,
+	[photo] [text] NULL,
 	[last_login] [datetime] NULL,
 ) ON [PRIMARY]
 GO
 CREATE TABLE [account].[user_biodata](
 	[nik] [varchar](20) NOT NULL,
-	[first_name] [varchar](50) NOT NULL,
+	[first_name] [varchar](50) NULL,
 	[last_name] [varchar](50) NULL,
-	[birthday] [date] NULL,
+	[call_name] [varchar](50) NULL,
+	[birth_date] [date] NULL,
+	[marital_code] [varchar](10) NULL,
+	[child] [integer] NOT NULL DEFAULT((0)),
 	[email] [varchar](100) NULL,
+	[address] [text] NULL,
 	[handphone] [varchar](20) NULL,
-	[phone] [varchar](20) NULL,
-	[marital_code] [varchar](10) NULL
+	[phone] [varchar](20) NULL
 ) ON [PRIMARY]
 GO
 CREATE TABLE [account].[user_identity](

@@ -39,7 +39,7 @@ class AuthController extends Controller
                 if(hash::check($r->post('p'),$user->pwd_hash)){
                     // get company_code, department_code, division_code, page_code
                     $q = UserGroup::where(['group_code' => $user->group_code])->first();
-                    return response()->json(Api::response(1,'Sukses', ['nik' => $user->nik, 'company' => $q->company_code, 'department' => $q->department_code, 'division' => $q->division_code, 'page' => $q->page_code, 'group' => $q->group_code]),200);
+                    return response()->json(Api::response(1,'Sukses', ['nik' => $user->nik, 'photo' => $user->photo, 'company' => $q->company_code, 'department' => $q->department_code, 'division' => $q->division_code, 'page' => $q->page_code, 'group' => $q->group_code]),200);
                 }
                 return response()->json(Api::response(0,'Kata sandi salah'), 200);
             }
