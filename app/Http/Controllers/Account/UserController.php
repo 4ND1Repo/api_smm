@@ -231,6 +231,19 @@ class UserController extends Controller
         return response()->json(Api::response(true, "berhasil update photo",[]),200);
     }
 
+    public function change_password(Request $r){
+      $user = User::where(['nik' => $r->nik]);
+      if($user->count() > 0){
+        $user = $user->first();
+        if(Hash::check($r->old_password, $user->pwd_hash)){
+          User::where(['nik' => $r->nik])->update(['pwd_hash' => Hash::make($r->new_password)]);
+          return response()->json(Api::response(true, 'Sukses merubah kata sandi'),200);
+        }
+        return response()->json(Api::response(false, 'Kata sandi lama tidak sesuai'),200);
+      }
+      return response()->json(Api::response(false, 'Pengguna tidak ditemukan'),200);
+    }
+
 
     // for biodata
     public function biodata(Request $r){

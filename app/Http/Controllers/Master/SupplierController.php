@@ -80,6 +80,56 @@ class SupplierController extends Controller
         return response()->json(Api::response(true,"Sukses"),200);
     }
 
+    public function get(Request $r){
+        // collect data from post
+        $input = $r->input();
+        $column_search = [
+            'supplier_code',
+            'supplier_name',
+            'supplier_phone',
+            'supplier_address',
+            'city_name',
+            'master.master_city.city_code',
+            'supplier_category'
+        ];
+
+        // generate default
+        if(!isset($input['sort']))
+            $input['sort'] = array(
+                'sort' => 'asc',
+                'field' => 'supplier_code'
+            );
+
+        // whole query
+        $sup = Supplier::selectRaw('master.master_supplier.*, master.master_status.status_label, master.master_city.city_name, NULL as action')
+        ->join('master.master_status','master.master_supplier.status_code','=','master.master_status.status_code')
+        ->join('master.master_city','master.master_supplier.city_code','=','master.master_city.city_code');
+
+        // where condition
+        if(isset($input['query'])){
+            if(!is_null($input['query']) and !empty($input['query'])){
+                foreach($input['query'] as $field => $val){
+                    if($field == 'status_code')
+                        $sup->where("master.master_status.".$field,$val);
+                    else if($field == 'find'){
+                        if(!empty($val)){
+                            $sup->where(function($sup) use($column_search,$val){
+                                foreach($column_search as $row)
+                                    $sup->orWhere($row,'like',"%".$val."%");
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        $sup->orderBy($input['sort']['field'],$input['sort']['sort']);
+
+        $data = $sup->get();
+
+        return response()->json($data,200);
+    }
+
     public function grid(Request $r){
         // collect data from post
         $input = $r->input();
@@ -134,7 +184,6 @@ class SupplierController extends Controller
         $sup->skip($skip);
         if(!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))
             $sup->take($input['pagination']['perpage']);
-        $sup->get();
 
         $row = $sup->get();
         $data = [

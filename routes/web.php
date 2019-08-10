@@ -71,6 +71,7 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
         $router->group(['prefix'=>'measure'], function() use($router){
             $router->get('/','Master\MeasureController@index');
             $router->get('find/{id}', 'Master\MeasureController@find');
+            $router->post('get','Master\MeasureController@get');
             $router->post('grid','Master\MeasureController@grid');
             $router->post('add', 'Master\MeasureController@add');
             $router->post('edit', 'Master\MeasureController@edit');
@@ -81,6 +82,7 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
         $router->group(['prefix'=>'category'], function() use($router){
             $router->get('/','Master\CategoryController@index');
             $router->get('find/{id}', 'Master\CategoryController@find');
+            $router->post('get','Master\CategoryController@get');
             $router->post('grid','Master\CategoryController@grid');
             $router->post('add', 'Master\CategoryController@add');
             $router->post('edit', 'Master\CategoryController@edit');
@@ -93,6 +95,7 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
             $router->get('brand','Master\StockController@brand');
             $router->get('find/{id}', 'Master\StockController@find');
             $router->post('autocomplete', 'Master\StockController@autocomplete');
+            $router->post('get','Master\StockController@get');
             $router->post('grid','Master\StockController@grid');
             $router->post('add', 'Master\StockController@add');
             $router->post('edit', 'Master\StockController@edit');
@@ -114,6 +117,7 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
         $router->group(['prefix' => 'supplier'], function() use($router){
             $router->get('/', 'Master\SupplierController@index');
             $router->get('find/{id}', 'Master\SupplierController@find');
+            $router->post('get', 'Master\SupplierController@get');
             $router->post('grid', 'Master\SupplierController@grid');
             $router->post('add', 'Master\SupplierController@add');
             $router->post('edit', 'Master\SupplierController@edit');
@@ -154,6 +158,9 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
             $router->group(['prefix' => 'biodata'], function() use($router){
               $router->post('/', 'Account\UserController@biodata');
             });
+
+            // change password
+            $router->post('change_password', 'Account\UserController@change_password');
         });
     });
 
@@ -213,8 +220,13 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
                 $router->post('check_price', 'Purchasing\PoController@check_price');
                 $router->post('cancel', 'Purchasing\PoController@cancel');
                 $router->post('process', 'Purchasing\PoController@process');
+                $router->post('get', 'Purchasing\PoController@get');
                 $router->post('grid', 'Purchasing\PoController@grid');
-                $router->post('history/grid', 'Purchasing\PoController@history_grid');
+                // history group
+                $router->group(['prefix' => 'history'], function() use($router){
+                  $router->post('get', 'Purchasing\PoController@history_get');
+                  $router->post('grid', 'Purchasing\PoController@history_grid');
+                });
             });
         });
     });
@@ -242,6 +254,7 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
                 $router->get('find/{id}','Document\RequestController@find_tools');
                 $router->post('add','Document\RequestController@add_tools');
                 $router->post('delete','Document\RequestController@delete_tools');
+                $router->post('get','Document\RequestController@get_tools');
                 $router->post('grid','Document\RequestController@grid_tools');
                 $router->post('send','Document\RequestController@send_tools');
             });
@@ -251,6 +264,7 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
                 $router->get('find/{id}','Document\RequestController@find_po');
                 $router->post('add','Document\RequestController@add_po');
                 $router->post('delete','Document\RequestController@delete_po');
+                $router->post('get','Document\RequestController@get_po');
                 $router->post('grid','Document\RequestController@grid_po');
             });
 
@@ -260,6 +274,7 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
                 $router->post('check','Document\RequestController@check_do');
                 $router->post('add','Document\RequestController@add_do');
                 $router->post('delete','Document\RequestController@delete_do');
+                $router->post('get','Document\RequestController@get_do');
                 $router->post('grid','Document\RequestController@grid_do');
             });
         });
@@ -272,6 +287,7 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
             $router->post('add', 'Warehouse\StockController@add');
             $router->post('edit', 'Warehouse\StockController@edit');
             $router->post('autocomplete', 'Warehouse\StockController@autocomplete');
+            $router->post('get','Warehouse\StockController@get');
             $router->post('grid','Warehouse\StockController@grid');
             $router->post('qty','Warehouse\StockController@qty');
             $router->post('history','Warehouse\StockController@history');
@@ -286,6 +302,7 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
 
             // warehouse list buy stock
             $router->group(['prefix' => 'list_buy'], function() use($router){
+                $router->post('get', 'Warehouse\ListBuyController@get');
                 $router->post('grid', 'Warehouse\ListBuyController@grid');
             });
 
@@ -294,6 +311,7 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
                 $router->get('find/{id}', 'Warehouse\OpnameController@find');
                 $router->get('date', 'Warehouse\OpnameController@date');
                 $router->post('add', 'Warehouse\OpnameController@add');
+                $router->post('get', 'Warehouse\OpnameController@get');
                 $router->post('grid', 'Warehouse\OpnameController@grid');
                 $router->post('approve', 'Warehouse\OpnameController@approve');
                 $router->post('reject', 'Warehouse\OpnameController@reject');

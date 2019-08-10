@@ -75,9 +75,9 @@ class MeasureController extends Controller
                 $old->update([
                     'measure_type' => $r->input('measure_type')
                 ]);
-            } else 
+            } else
                 return response()->json(Api::response(false,"Satuan sudah ada"),200);
-        } else 
+        } else
             return response()->json(Api::response(false,"Data satuan tidak ada"),200);
 
         return response()->json(Api::response(true,"Sukses"),200);
@@ -86,6 +86,47 @@ class MeasureController extends Controller
     public function delete(Request $r){
         $stock = Measure::where('measure_code',$r->input('measure_code'))->delete();
         return response()->json(Api::response(true,"Sukses"),200);
+    }
+
+    public function get(Request $r){
+        // collect data from post
+        $input = $r->input();
+        $column_search = [
+            'measure_code',
+            'measure_type'
+        ];
+
+        // generate default
+        if(!isset($input['sort']))
+            $input['sort'] = array(
+                'sort' => 'asc',
+                'field' => 'measure_code'
+            );
+
+        // whole query
+        $query = Measure::selectRaw('*');
+
+        // where condition
+        if(isset($input['query'])){
+            if(!is_null($input['query']) and !empty($input['query'])){
+                foreach($input['query'] as $field => $val){
+                    if($field == 'find'){
+                        if(!empty($val)){
+                            $query->where(function($query) use($column_search,$val){
+                                foreach($column_search as $row)
+                                    $query->orWhere($row,'like',"%".$val."%");
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        $query->orderBy($input['sort']['field'],$input['sort']['sort']);
+
+        $data = $query->get();
+
+        return response()->json($data,200);
     }
 
     public function grid(Request $r){
@@ -125,7 +166,7 @@ class MeasureController extends Controller
         $count_all = $query->count();
         // get total page from count all
         $pages = (!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))? ceil($count_all/$input['pagination']['perpage']):1;
-        
+
         $query->orderBy($input['sort']['field'],$input['sort']['sort']);
 
         // skipping for next page
@@ -133,7 +174,6 @@ class MeasureController extends Controller
         $query->skip($skip);
         if(!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))
             $query->take($input['pagination']['perpage']);
-        $query->get();
 
         $row = $query->get();
         $data = [

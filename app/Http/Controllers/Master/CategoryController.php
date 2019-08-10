@@ -61,9 +61,9 @@ class CategoryController extends Controller
                 $old->update([
                     'category_name' => $r->input('category_name')
                 ]);
-            } else 
+            } else
                 return response()->json(Api::response(false,"Kategori sudah ada"),200);
-        } else 
+        } else
             return response()->json(Api::response(false,"Data kategori tidak ada"),200);
 
         return response()->json(Api::response(true,"Sukses"),200);
@@ -72,6 +72,47 @@ class CategoryController extends Controller
     public function delete(Request $r){
         $query = Category::where('category_code',$r->category_code)->delete();
         return response()->json(Api::response(true,"Sukses"),200);
+    }
+
+    public function get(Request $r){
+        // collect data from post
+        $input = $r->input();
+        $column_search = [
+            'category_code',
+            'category_name'
+        ];
+
+        // generate default
+        if(!isset($input['sort']))
+            $input['sort'] = array(
+                'sort' => 'asc',
+                'field' => 'category_code'
+            );
+
+        // whole query
+        $query = Category::selectRaw('*');
+
+        // where condition
+        if(isset($input['query'])){
+            if(!is_null($input['query']) and !empty($input['query'])){
+                foreach($input['query'] as $field => $val){
+                    if($field == 'find'){
+                        if(!empty($val)){
+                            $query->where(function($query) use($column_search,$val){
+                                foreach($column_search as $row)
+                                    $query->orWhere($row,'like',"%".$val."%");
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        $query->orderBy($input['sort']['field'],$input['sort']['sort']);
+
+        $data = $query->get();
+
+        return response()->json($data,200);
     }
 
     public function grid(Request $r){
@@ -111,7 +152,7 @@ class CategoryController extends Controller
         $count_all = $query->count();
         // get total page from count all
         $pages = (!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))? ceil($count_all/$input['pagination']['perpage']):1;
-        
+
         $query->orderBy($input['sort']['field'],$input['sort']['sort']);
 
         // skipping for next page
@@ -119,7 +160,6 @@ class CategoryController extends Controller
         $query->skip($skip);
         if(!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))
             $query->take($input['pagination']['perpage']);
-        $query->get();
 
         $row = $query->get();
         $data = [

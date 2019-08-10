@@ -105,6 +105,68 @@ class OpnameController extends Controller
         return response()->json(Api::response(true, 'sukses'),200);
     }
 
+    public function get(Request $r){
+        // collect data from post
+        $input = $r->input();
+
+        $column_search = [
+            'stock.stock.stock_code',
+            'master.master_stock.stock_name',
+            'master.master_stock.stock_size',
+            'master.master_stock.stock_brand',
+            'master.master_stock.stock_type',
+            'opname_qty_from',
+            'opname_qty',
+            'opname_notes'
+        ];
+
+        // generate default
+        if(!isset($input['sort']))
+            $input['sort'] = array(
+                'sort' => 'asc',
+                'field' => 'opname_qty_from'
+            );
+
+        // whole query
+        $sup = Opname::selectRaw('stock.opname.*, stock.stock.stock_code, master.master_stock.stock_name, master.master_stock.stock_size, master.master_stock.stock_brand, master.master_stock.stock_color, master.master_stock.stock_min_qty, master.master_stock.stock_daily_use, master.master_stock.stock_type, master.master_measure.measure_type')
+        ->join('stock.stock', 'stock.opname.main_stock_code', '=', 'stock.stock.main_stock_code')
+        ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code')
+        ->leftJoin('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
+        ->where(['stock.stock.page_code' => $input['page_code']]);
+
+        // where condition
+        if(isset($input['query'])){
+            if(!is_null($input['query']) and !empty($input['query'])){
+                foreach($input['query'] as $field => $val){
+                    if(in_array($field, array('stock_brand')) && (!empty($val) && !is_null($val)))
+                        $sup->where("master.master_stock.".$field,($val=="null"?NULL:$val));
+                    else if(in_array($field, array('approve'))){
+                        if($val==1)
+                            $sup->whereRaw("stock.opname.approve_by IS NOT NULL");
+                        else if($val==0)
+                            $sup->whereRaw("stock.opname.reject_by IS NOT NULL");
+                    }
+                    else if(in_array($field, array('opname_date_from')))
+                        $sup->where("stock.opname.".$field,($val=="null"?NULL:$val));
+                    else if($field == 'find'){
+                        if(!empty($val)){
+                            $sup->where(function($sup) use($column_search,$val){
+                                foreach($column_search as $row)
+                                    $sup->orWhere($row,'like',"%".$val."%");
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        $sup->orderBy($input['sort']['field'],$input['sort']['sort']);
+
+        $data = $sup->get();
+
+        return response()->json($data,200);
+    }
+
     public function grid(Request $r){
         // collect data from post
         $input = $r->input();

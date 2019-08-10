@@ -78,7 +78,7 @@ class RequestController extends Controller
     public function find_tools($id){
         $data = [];
         $data['request_tools'] = ReqTools::where('req_tools_code',$id)->first();
-        $data['request_tools_detail'] = ReqToolsDetail::selectRaw('master.master_stock.*, master.master_measure.measure_type, document.request_tools_detail.req_tools_code, document.request_tools_detail.req_tools_qty, document.request_tools_detail.finish_by, document.request_tools_detail.fullfillment')
+        $data['request_tools_detail'] = ReqToolsDetail::selectRaw('master.master_stock.*, master.master_measure.measure_type, document.request_tools_detail.req_tools_code, document.request_tools_detail.req_tools_qty, document.request_tools_detail.finish_by, document.request_tools_detail.fullfillment, document.request_tools_detail.req_tools_notes')
             ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'document.request_tools_detail.stock_code')
             ->join('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
                 ->where('req_tools_code',$id)->get();
@@ -144,6 +144,57 @@ class RequestController extends Controller
             }
         }
         return Api::response(true,"Sukses",$data);
+    }
+
+    public function get_tools(Request $r){
+        // collect data from post
+        $input = $r->input();
+
+        $column_search = [
+            'req_tools_code',
+            'req_nik',
+            'req_tools_date',
+            'name_of_request'
+        ];
+
+        // generate default
+        if(!isset($input['sort']))
+            $input['sort'] = array(
+                'sort' => 'desc',
+                'field' => 'req_tools_date'
+            );
+
+        // whole query
+        $sup = ReqTools::selectRaw('document.request_tools.*, (SELECT count(req_tools_code) FROM document.request_tools_detail WHERE req_tools_code=document.request_tools.req_tools_code) as sum_item, master.master_status.status_label')
+        ->join('master.master_status', 'master.master_status.status_code', '=', 'document.request_tools.status')
+        ->where(function($sup) use($input){
+            $sup->where('document.request_tools.page_code_from', $input['page_code']);
+            $sup->orWhere('document.request_tools.page_code', $input['page_code']);
+        });
+
+        // where condition
+        if(isset($input['query'])){
+            if(!is_null($input['query']) and !empty($input['query'])){
+                foreach($input['query'] as $field => $val){
+                    if(in_array($field, array('status')) && (!empty($val) && !is_null($val)))
+                        $sup->where("document.request_tools.".$field,($val=="null"?NULL:$val));
+                    else if($field == 'find'){
+                        if(!empty($val)){
+                            $sup->where(function($sup) use($column_search,$val){
+                                foreach($column_search as $row)
+                                    $sup->orWhere($row,'like',"%".$val."%");
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        $sup->orderBy($input['sort']['field'],$input['sort']['sort']);
+
+        $data = $sup->get();
+
+        return response()->json($data,200);
     }
 
     public function grid_tools(Request $r){
@@ -264,6 +315,54 @@ class RequestController extends Controller
         PO::where(['po_code' => $r->po_code])->delete();
 
         return response()->json(Api::response(true,'Sukses'),200);
+    }
+
+    public function get_po(Request $r){
+        // collect data from post
+        $input = $r->input();
+
+        $column_search = [
+            'po_code',
+            'po_date',
+            'page_name'
+        ];
+
+        // generate default
+        if(!isset($input['sort']))
+            $input['sort'] = array(
+                'sort' => 'desc',
+                'field' => 'po_date'
+            );
+
+        // whole query
+        $sup = PO::selectRaw('document.purchase_order.*, (SELECT count(po_code) FROM document.purchase_order_detail WHERE po_code=document.purchase_order.po_code) as sum_item, master.master_status.status_label, master.master_page.page_name')
+        ->join('master.master_status', 'master.master_status.status_code', '=', 'document.purchase_order.status')
+        ->join('master.master_page', 'master.master_page.page_code', '=', 'document.purchase_order.page_code_destination')
+        ->where(['document.purchase_order.page_code' => $input['page_code']]);
+
+        // where condition
+        if(isset($input['query'])){
+            if(!is_null($input['query']) and !empty($input['query'])){
+                foreach($input['query'] as $field => $val){
+                    if(in_array($field, array('status')) && (!empty($val) && !is_null($val)))
+                        $sup->where("document.purchase_order.".$field,($val=="null"?NULL:$val));
+                    else if($field == 'find'){
+                        if(!empty($val)){
+                            $sup->where(function($sup) use($column_search,$val){
+                                foreach($column_search as $row)
+                                    $sup->orWhere($row,'like',"%".$val."%");
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        $sup->orderBy($input['sort']['field'],$input['sort']['sort']);
+
+        $data = $sup->get();
+
+        return response()->json($data,200);
     }
 
     public function grid_po(Request $r){
@@ -434,15 +533,65 @@ class RequestController extends Controller
     public function find_do($id){
         $data = [];
         $data['purchase_order'] = PO::where('po_code',$id)->first();
-        $data['purchase_order_detail'] = PODetail::selectRaw('master.master_stock.*, document.purchase_order_detail.*, (document.purchase_order_detail.po_qty - CASE WHEN DocDO.qty IS NULL THEN 0 ELSE DocDO.qty END) AS qty')
+        $data['purchase_order_detail'] = PODetail::selectRaw('master.master_stock.*, document.purchase_order_detail.*, (document.purchase_order_detail.po_qty - CASE WHEN DocDO.qty IS NULL THEN 0 ELSE DocDO.qty END) AS qty, master.master_measure.measure_type')
                 ->join('stock.stock', 'stock.stock.main_stock_code', '=', 'document.purchase_order_detail.main_stock_code')
                 ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code')
+                ->leftJoin('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
                 ->leftJoin(DB::raw("(SELECT po_code, main_stock_code, sum(do_qty) AS qty FROM document.delivery_order GROUP BY po_code, main_stock_code) AS DocDO"), function($do){
                   $do->on('DocDO.po_code','=','document.purchase_order_detail.po_code');
                   $do->on('DocDO.main_stock_code','=','document.purchase_order_detail.main_stock_code');
                 })
                 ->where('document.purchase_order_detail.po_code',$id)->get();
         return response()->json(Api::response(true,"Sukses",$data),200);
+    }
+
+    public function get_do(Request $r){
+        // collect data from post
+        $input = $r->input();
+
+        $column_search = [
+            'po_code',
+            'po_date',
+            'page_name'
+        ];
+
+        // generate default
+        if(!isset($input['sort']))
+            $input['sort'] = array(
+                'sort' => 'desc',
+                'field' => 'po_date'
+            );
+
+        // whole query
+        $sup = PO::selectRaw('document.purchase_order.*, (SELECT count(po_code) FROM document.purchase_order_detail WHERE po_code=document.purchase_order.po_code) as sum_item, master.master_status.status_label, master.master_page.page_name')
+        ->join('master.master_status', 'master.master_status.status_code', '=', 'document.purchase_order.status')
+        ->join('master.master_page', 'master.master_page.page_code', '=', 'document.purchase_order.page_code_destination')
+        ->where(['document.purchase_order.page_code' => $input['page_code']])
+        ->whereIn('document.purchase_order.status', ['ST02']);
+
+        // where condition
+        if(isset($input['query'])){
+            if(!is_null($input['query']) and !empty($input['query'])){
+                foreach($input['query'] as $field => $val){
+                    if(in_array($field, array('status')) && (!empty($val) && !is_null($val)))
+                        $sup->where("document.purchase_order.".$field,($val=="null"?NULL:$val));
+                    else if($field == 'find'){
+                        if(!empty($val)){
+                            $sup->where(function($sup) use($column_search,$val){
+                                foreach($column_search as $row)
+                                    $sup->orWhere($row,'like',"%".$val."%");
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        $sup->orderBy($input['sort']['field'],$input['sort']['sort']);
+
+        $data = $sup->get();
+
+        return response()->json($data,200);
     }
 
     public function grid_do(Request $r){

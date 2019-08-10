@@ -117,6 +117,56 @@ class PoController extends Controller
         return response()->json(Api::response(true,"Sukses"),200);
     }
 
+    public function get(Request $r){
+        // collect data from post
+        $input = $r->input();
+
+        $column_search = [
+            'po_code',
+            'po_date',
+            'page_name',
+            'nik'
+        ];
+
+        // generate default
+        if(!isset($input['sort']))
+            $input['sort'] = array(
+                'sort' => 'desc',
+                'field' => 'po_date'
+            );
+
+        // whole query
+        $sup = PO::selectRaw('document.purchase_order.*, (SELECT count(po_code) FROM document.purchase_order_detail WHERE po_code=document.purchase_order.po_code) as sum_item, master.master_status.status_label, master.master_page.page_name')
+        ->join('master.master_status', 'master.master_status.status_code', '=', 'document.purchase_order.status')
+        ->join('master.master_page', 'master.master_page.page_code', '=', 'document.purchase_order.page_code')
+        ->where(['document.purchase_order.page_code_destination' => $input['page_code']])
+        ->whereIn('document.purchase_order.status', ['ST02','ST05','ST06']);
+
+        // where condition
+        if(isset($input['query'])){
+            if(!is_null($input['query']) and !empty($input['query'])){
+                foreach($input['query'] as $field => $val){
+                    if(in_array($field, array('status')) && (!empty($val) && !is_null($val)))
+                        $sup->where("document.purchase_order.".$field,($val=="null"?NULL:$val));
+                    else if($field == 'find'){
+                        if(!empty($val)){
+                            $sup->where(function($sup) use($column_search,$val){
+                                foreach($column_search as $row)
+                                    $sup->orWhere($row,'like',"%".$val."%");
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        $sup->orderBy($input['sort']['field'],$input['sort']['sort']);
+
+        $data = $sup->get();
+
+        return response()->json($data,200);
+    }
+
     public function grid(Request $r){
         // collect data from post
         $input = $r->input();
@@ -185,6 +235,70 @@ class PoController extends Controller
             ],
             "data"=> $row
         ];
+
+        return response()->json($data,200);
+    }
+
+    public function history_get(Request $r){
+        // collect data from post
+        $input = $r->input();
+
+        $column_search = [
+            'document.purchase_order_detail.po_code',
+            'document.purchase_order.po_date',
+            'document.delivery_order.do_code',
+            'master.master_stock.stock_name',
+            'master.master_stock.stock_size',
+            'master.master_stock.stock_brand',
+            'master.master_stock.stock_type',
+            'master.master_stock.stock_color'
+        ];
+
+        // generate default
+        if(!isset($input['sort']))
+            $input['sort'] = array(
+                'sort' => 'desc',
+                'field' => 'document.purchase_order.po_date'
+            );
+        else {
+          if($input['sort']['field'] == 'po_code') $input['sort']['field'] = 'document.purchase_order_detail.po_code';
+        }
+
+        // whole query
+        $sup = PODetail::selectRaw('document.purchase_order_detail.*, master.master_stock.*, po_date, document.purchase_order.status, finish_by, finish_date, document.delivery_order.do_code, document.delivery_order.do_qty, master.master_status.status_label, master.master_measure.measure_type')
+        ->join('document.purchase_order', 'document.purchase_order.po_code', '=', 'document.purchase_order_detail.po_code')
+        ->leftJoin('document.delivery_order', function($query){
+            $query->on('document.delivery_order.po_code', '=', 'document.purchase_order_detail.po_code');
+            $query->on('document.delivery_order.main_stock_code', '=', 'document.purchase_order_detail.main_stock_code');
+        })
+        ->join('stock.stock', 'stock.stock.main_stock_code', '=', 'document.purchase_order_detail.main_stock_code')
+        ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code')
+        ->join('master.master_status', 'master.master_status.status_code', '=', 'document.purchase_order.status')
+        ->join('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
+        ->where(['document.purchase_order.page_code_destination' => $input['page_code']])
+        ->whereIn('document.purchase_order.status', ['ST05','ST09']);
+
+        // where condition
+        if(isset($input['query'])){
+            if(!is_null($input['query']) and !empty($input['query'])){
+                foreach($input['query'] as $field => $val){
+                    if(in_array($field, array('status')) && (!empty($val) && !is_null($val)))
+                        $sup->where("document.purchase_order.".$field,($val=="null"?NULL:$val));
+                    else if($field == 'find'){
+                        if(!empty($val)){
+                            $sup->where(function($sup) use($column_search,$val){
+                                foreach($column_search as $row)
+                                    $sup->orWhere($row,'like',"%".$val."%");
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        $sup->orderBy($input['sort']['field'],$input['sort']['sort']);
+
+        $data = $sup->get();
 
         return response()->json($data,200);
     }

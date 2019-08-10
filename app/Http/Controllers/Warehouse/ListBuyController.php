@@ -30,6 +30,68 @@ class ListBuyController extends Controller
         return date("Y-m-d H:i:s");
     }
 
+    public function get(Request $r){
+        // collect data from post
+        $input = $r->input();
+
+        $column_search = [
+            'stock.stock.stock_code',
+            'stock_name',
+            'stock_size',
+            'stock_brand',
+            'stock_type',
+            'stock_color',
+            'cabinet.cabinet_name',
+            'master.master_measure.measure_type',
+            'qty.stock_qty',
+            'stock_min_qty',
+            'stock_max_qty'
+        ];
+
+        // generate default
+        if(!isset($input['sort']))
+            $input['sort'] = array(
+                'sort' => 'asc',
+                'field' => 'stock_name'
+            );
+
+        // whole query
+        $sup = Stock::selectRaw("stock.stock.main_stock_code, master.master_stock.*, master.master_measure.measure_type, qty.stock_qty, cabinet.cabinet_name, (SELECT TOP 1 document.purchase_order.po_code FROM document.purchase_order JOIN document.purchase_order_detail ON document.purchase_order.po_code=document.purchase_order_detail.po_code WHERE document.purchase_order.status = 'ST06' AND document.purchase_order_detail.main_stock_code=stock.stock.main_stock_code ORDER BY document.purchase_order.po_code ASC) AS po_code")
+        ->join('master.master_stock','master.master_stock.stock_code','=','stock.stock.stock_code')
+        ->join('master.master_measure','master.master_measure.measure_code','=','master.master_stock.measure_code')
+        ->leftJoin(DB::raw("(SELECT main_stock_code, cabinet_name FROM stock.cabinet LEFT JOIN master.master_cabinet ON master.master_cabinet.cabinet_code = stock.cabinet.cabinet_code WHERE master.master_cabinet.page_code = '".$input['page_code']."') AS cabinet"),'cabinet.main_stock_code','=','stock.stock.main_stock_code')
+        ->leftJoin(DB::raw("(SELECT DISTINCT main_stock_code, SUM(qty) AS stock_qty FROM stock.qty GROUP BY main_stock_code ) AS qty"),'qty.main_stock_code','=','stock.stock.main_stock_code')
+        ->where(['stock.stock.page_code' => $input['page_code']])
+        ->where(function($sup){
+          $sup->whereRaw(DB::raw('(CASE WHEN [qty].[stock_qty] IS NULL THEN 0 ELSE [qty].[stock_qty] END) <= [master].[master_stock].[stock_min_qty]'));
+          $sup->orWhereRaw(DB::raw("(SELECT COUNT(stock_code) AS cnt FROM document.request_tools_detail WHERE stock_code = master.master_stock.stock_code AND fullfillment = 0 GROUP BY stock_code) > 0 "));
+        });
+
+        // where condition
+        if(isset($input['query'])){
+            if(!is_null($input['query']) and !empty($input['query'])){
+                foreach($input['query'] as $field => $val){
+                    if(in_array($field, array('measure_code','stock_brand','stock_daily_use')) && (!empty($val) && !is_null($val)))
+                        $sup->where("master.master_stock.".$field,($val=="null"?NULL:$val));
+                    else if($field == 'find'){
+                        if(!empty($val)){
+                            $sup->where(function($sup) use($column_search,$val){
+                                foreach($column_search as $row)
+                                    $sup->orWhere($row,'like',"%".$val."%");
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        $sup->orderBy($input['sort']['field'],$input['sort']['sort']);
+
+        $data = $sup->get();
+
+        return response()->json($data,200);
+    }
+
     public function grid(Request $r){
         // collect data from post
         $input = $r->input();

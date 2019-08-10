@@ -84,7 +84,7 @@ class StockController extends Controller
                 'stock_max_qty' => $r->input('stock_max_qty'),
                 'stock_daily_use' => $r->has('stock_daily_use')?1:0
             ]);
-        } else 
+        } else
             return response()->json(Api::response(false,"Data stok tidak ada"),200);
 
         return response()->json(Api::response(true,"Sukses"),200);
@@ -93,6 +93,57 @@ class StockController extends Controller
     public function delete(Request $r){
         $stock = Stock::where('stock_code',$r->input('stock_code'))->delete();
         return response()->json(Api::response(true,"Sukses"),200);
+    }
+
+    public function get(Request $r){
+        // collect data from post
+        $input = $r->input();
+
+        $column_search = [
+            'stock_code',
+            'stock_name',
+            'stock_size',
+            'stock_brand',
+            'stock_type',
+            'stock_color',
+            'master.master_measure.measure_type',
+            'stock_min_qty'
+        ];
+
+        // generate default
+        if(!isset($input['sort']))
+            $input['sort'] = array(
+                'sort' => 'asc',
+                'field' => 'stock_name'
+            );
+
+        // whole query
+        $sup = Stock::selectRaw('master.master_stock.*, master.master_measure.measure_type')
+        ->join('master.master_measure','master.master_measure.measure_code','=','master.master_stock.measure_code');
+
+        // where condition
+        if(isset($input['query'])){
+            if(!is_null($input['query']) and !empty($input['query'])){
+                foreach($input['query'] as $field => $val){
+                    if(in_array($field, array('measure_code','stock_brand','stock_daily_use')) && (!empty($val) && !is_null($val)))
+                        $sup->where("master.master_stock.".$field,($val=="null"?NULL:$val));
+                    else if($field == 'find'){
+                        if(!empty($val)){
+                            $sup->where(function($sup) use($column_search,$val){
+                                foreach($column_search as $row)
+                                    $sup->orWhere($row,'like',"%".$val."%");
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        $sup->orderBy($input['sort']['field'],$input['sort']['sort']);
+
+        $data = $sup->get();
+
+        return response()->json($data,200);
     }
 
     public function grid(Request $r){
@@ -140,7 +191,7 @@ class StockController extends Controller
         $count_all = $sup->count();
         // get total page from count all
         $pages = (!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))? ceil($count_all/$input['pagination']['perpage']):1;
-        
+
         $sup->orderBy($input['sort']['field'],$input['sort']['sort']);
 
         // skipping for next page
