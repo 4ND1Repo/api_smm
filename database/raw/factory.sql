@@ -60,7 +60,7 @@ GO
 
 CREATE TABLE [document].[request_tools_detail](
 	[req_tools_code] [varchar](20) NOT NULL,
-	[stock_code] [varchar](10) NOT NULL,
+	[stock_code] [varchar](20) NOT NULL,
 	[req_tools_qty] [decimal](20,2) NOT NULL,
 	[req_tools_notes] [varchar](255) NULL,
 	[fullfillment] [bit] NOT NULL DEFAULT((1)),
@@ -124,7 +124,8 @@ CREATE TABLE [master].[master_icon](
 GO
 CREATE TABLE [master].[master_measure](
 	[measure_code] [varchar](10) NOT NULL,
-	[measure_type] [varchar](50) NULL
+	[measure_type] [varchar](50) NOT NULL,
+	[measure_name] [varchar](100) NOT NULL
 ) ON [PRIMARY]
 GO
 CREATE TABLE [master].[master_category](
@@ -133,11 +134,11 @@ CREATE TABLE [master].[master_category](
 ) ON [PRIMARY]
 GO
 CREATE TABLE [master].[master_stock](
-	[stock_code] [varchar](10) NOT NULL,
+	[stock_code] [varchar](20) NOT NULL,
 	[stock_name] [varchar](50) NULL,
-	[stock_size] [varchar](20) NULL,
-	[stock_brand] [varchar](20) NULL,
-	[stock_type] [varchar](20) NULL,
+	[stock_size] [varchar](50) NULL,
+	[stock_brand] [varchar](50) NULL,
+	[stock_type] [varchar](50) NULL,
 	[stock_color] [varchar](20) NULL,
 	[stock_description] [varchar](50) NULL,
 	[measure_code] [varchar](10) NOT NULL,
@@ -147,14 +148,14 @@ CREATE TABLE [master].[master_stock](
 ) ON [PRIMARY]
 GO
 CREATE TABLE [stock].[measure_convert](
-	[stock_code] [varchar](10) NOT NULL,
+	[stock_code] [varchar](20) NOT NULL,
 	[measure_code] [varchar](10) NOT NULL,
 	[measure_qty] [varchar](10) NOT NULL,
 ) ON [PRIMARY]
 GO
 CREATE TABLE [stock].[stock](
 	[main_stock_code] [varchar](20) NOT NULL,
-	[stock_code] [varchar](10) NOT NULL,
+	[stock_code] [varchar](20) NOT NULL,
 	[page_code] [varchar](10) NOT NULL,
 	[nik] [varchar](10) NOT NULL,
 	[main_stock_date] [datetime] NOT NULL DEFAULT(GETDATE()),
@@ -240,11 +241,6 @@ CREATE TABLE [master].[master_company](
 	[company_code] [varchar](10) NOT NULL,
 	[company_name] [varchar](100) NULL,
 	[company_description] [varchar](255) NULL
-) ON [PRIMARY]
-GO
-CREATE TABLE [master].[marital](
-	[marital_code] [varchar](10) NOT NULL,
-	[marital_name] [varchar](50) NULL
 ) ON [PRIMARY]
 GO
 CREATE TABLE [master].[master_department](
@@ -414,16 +410,16 @@ INSERT INTO [master].[master_status](status_code,status_label) VALUES
 ('ST09', 'Dibatalkan')
 GO
 INSERT INTO [master].[master_page] VALUES
-('wh', 'Warehouse'),
+('wh', 'Gudang Umum'),
 ('mk','Marketing'),
-('pur','Purchasing'),
+('pur','Pembelian'),
 ('su','Superuser'),
 ('opr','Operator')
 GO
 INSERT INTO [master].[master_measure] VALUES
-('MEA001', 'Kg'),
-('MEA002', 'Liter'),
-('MEA003', 'Meter')
+('MEA001', 'Kg', 'Kilogram'),
+('MEA002', 'ltr', 'Liter'),
+('MEA003', 'M', 'Meter')
 GO
 INSERT INTO [master].[master_city](city_code,city_name,status_code) VALUES
 ('BDG','Bandung','ST01'),
