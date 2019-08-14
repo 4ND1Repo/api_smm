@@ -199,7 +199,6 @@ class StockController extends Controller
         $sup->skip($skip);
         if(!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))
             $sup->take($input['pagination']['perpage']);
-        $sup->get();
 
         $row = $sup->get();
         $data = [

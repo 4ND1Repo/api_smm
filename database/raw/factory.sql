@@ -410,9 +410,9 @@ INSERT INTO [master].[master_status](status_code,status_label) VALUES
 ('ST09', 'Dibatalkan')
 GO
 INSERT INTO [master].[master_page] VALUES
-('wh', 'Gudang Umum'),
+('wh', 'Warehouse'),
 ('mk','Marketing'),
-('pur','Pembelian'),
+('pur','Purchasing'),
 ('su','Superuser'),
 ('opr','Operator')
 GO
