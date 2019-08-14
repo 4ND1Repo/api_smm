@@ -56,6 +56,7 @@ class MeasureController extends Controller
             $mea = new Measure;
             $mea->measure_code = $this->_generate_prefix();
             $mea->measure_type = $r->input('measure_type');
+            $mea->measure_name = $r->input('measure_name');
             $res = $mea->save();
         }
 
@@ -71,12 +72,17 @@ class MeasureController extends Controller
             // validate for same name
             $validate = Measure::where('measure_type',$r->input('measure_type'))->get();
 
-            if($validate->count() == 0){
+            if($validate->count() > 0){
                 $old->update([
-                    'measure_type' => $r->input('measure_type')
+                    'measure_name' => $r->input('measure_name')
                 ]);
-            } else
-                return response()->json(Api::response(false,"Satuan sudah ada"),200);
+                return response()->json(Api::response(true,"Sukses, tapi singkatan telah ada sebelumnya"),200);
+            } else{
+                $old->update([
+                    'measure_type' => $r->input('measure_type'),
+                    'measure_name' => $r->input('measure_name')
+                ]);
+            }
         } else
             return response()->json(Api::response(false,"Data satuan tidak ada"),200);
 
