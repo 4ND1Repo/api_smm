@@ -144,8 +144,7 @@ class StockController extends Controller
                 'stock_type' => $r->input('stock_type'),
                 'stock_color' => $r->input('stock_color'),
                 'measure_code' => $r->input('measure_code'),
-                'stock_min_qty' => $r->input('stock_min_qty'),
-                'stock_max_qty' => $r->input('stock_max_qty'),
+                'stock_min_qty' => (!empty($r->input('stock_min_qty')) && !is_null($r->input('stock_min_qty')))?$r->input('stock_min_qty'):0,
                 'stock_daily_use' => $r->has('stock_daily_use')?1:0
             ]);
         } else
@@ -241,6 +240,7 @@ class StockController extends Controller
     public function grid(Request $r){
         // collect data from post
         $input = $r->input();
+        if($input['pagination']['perpage'] == "NaN") $input['pagination']['perpage'] = NULL;
 
         $column_search = [
             'stock.stock.stock_code',
