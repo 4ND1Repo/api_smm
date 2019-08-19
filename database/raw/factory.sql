@@ -52,6 +52,10 @@ CREATE TABLE [document].[request_tools](
 	[name_of_request] [varchar](30) NOT NULL,
 	[create_by] [varchar](10) NOT NULL,
 	[create_date] [datetime] NOT NULL DEFAULT(GETDATE()),
+	[approve_by] [varchar](20) NULL,
+	[approve_date] [datetime] NULL,
+	[reject_by] [varchar](20) NULL,
+	[reject_date] [datetime] NULL,
 	[status] [varchar](10) NOT NULL DEFAULT(('ST02')),
 	[finish_by] [varchar](10) NULL,
 	[finish_date] [datetime] NULL
@@ -63,6 +67,7 @@ CREATE TABLE [document].[request_tools_detail](
 	[stock_code] [varchar](20) NOT NULL,
 	[req_tools_qty] [decimal](20,2) NOT NULL,
 	[req_tools_notes] [varchar](255) NULL,
+	[req_take_nik] [varchar](20) NULL,
 	[fullfillment] [bit] NOT NULL DEFAULT((1)),
 	[finish_by] [varchar](10) NULL,
 	[finish_date] [datetime] NULL

@@ -102,6 +102,7 @@ class RequestController extends Controller
                 $drtd->req_tools_code = $drt->req_tools_code;
                 $drtd->stock_code = $stock_code;
                 $drtd->req_tools_qty = $qty;
+                $drtd->req_tools_notes = !empty($r->notes[$stock_code])?$r->notes[$stock_code]:NULL;
                 if(!$this->_check_qty($qty,$stock_code,$r->page_code)){
                     $drt->where(['req_tools_code' => $drt->req_tools_code])->update(['status' => "ST03"]);
                     $drtd->fullfillment = 0;
@@ -135,7 +136,7 @@ class RequestController extends Controller
         $qty = DB::select("EXEC stock.stock_out @stcode='".$r->stock_code."', @qty=".$stock->req_tools_qty.", @nik='".$r->nik."', @page='".$stock->page_code."', @notes='".$notes."'");
         if(count($qty) > 0){
             // flag finish stock in document.request_tools_detail
-            $drtd = ReqToolsDetail::where(['req_tools_code' => $stock->req_tools_code, 'stock_code' => $stock->stock_code])->update(['finish_by' => $r->nik, 'finish_date' => date('Y-m-d H:i:s')]);
+            $drtd = ReqToolsDetail::where(['req_tools_code' => $stock->req_tools_code, 'stock_code' => $stock->stock_code])->update(['finish_by' => $r->nik, 'finish_date' => date('Y-m-d H:i:s'), 'req_take_nik' => $r->req_take_nik]);
 
             // check if all request was done
             $count = ReqToolsDetail::where(['req_tools_code' => $stock->req_tools_code, 'finish_by' => null])->count();
@@ -473,10 +474,11 @@ class RequestController extends Controller
                 if($qQty->save()){
                   // check status in request tools status to fullfill request if stock available
                   // get stock code by main_stock_code
-                  $stk = Stock::selectRaw('stock.stock.main_stock_code, stock.stock.stock_code, stock.stock.page_code, SUM(stock.qty.qty) as qty')
-                    ->join('stock.qty', 'stock.qty.main_stock_code', '=', 'stock.stock.main_stock_code')
+                  $stk = Stock::selectRaw('stock.stock.main_stock_code, stock.stock.stock_code, stock.stock.page_code, CASE WHEN SUM(stock.qty.qty) <> NULL THEN SUM(stock.qty.qty) ELSE 0 END as qty')
+                    ->leftJoin('stock.qty', 'stock.qty.main_stock_code', '=', 'stock.stock.main_stock_code')
                     ->where(['stock.stock.main_stock_code' => $main_stock_code])
                     ->groupBy(['stock.stock.main_stock_code', 'stock.stock.stock_code', 'stock.stock.page_code'])->first();
+
                   // get outstanding fullfillment
                   $rtd = ReqToolsDetail::selectRaw('document.request_tools_detail.req_tools_code, document.request_tools_detail.stock_code, document.request_tools_detail.req_tools_qty')
                     ->join('document.request_tools','document.request_tools_detail.req_tools_code', '=', 'document.request_tools.req_tools_code')

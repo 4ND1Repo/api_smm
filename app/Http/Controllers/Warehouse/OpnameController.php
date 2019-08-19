@@ -116,8 +116,8 @@ class OpnameController extends Controller
               ]);
             // check status in request tools status to fullfill request if stock available
             // get stock code by main_stock_code
-            $stk = Stock::selectRaw('stock.stock.main_stock_code, stock.stock.stock_code, stock.stock.page_code, SUM(stock.qty.qty) as qty')
-              ->join('stock.qty', 'stock.qty.main_stock_code', '=', 'stock.stock.main_stock_code')
+            $stk = Stock::selectRaw('stock.stock.main_stock_code, stock.stock.stock_code, stock.stock.page_code, CASE WHEN SUM(stock.qty.qty) <> NULL THEN SUM(stock.qty.qty) ELSE 0 END as qty')
+              ->leftJoin('stock.qty', 'stock.qty.main_stock_code', '=', 'stock.stock.main_stock_code')
               ->where(['stock.stock.main_stock_code' => $main_stock_code])
               ->groupBy(['stock.stock.main_stock_code', 'stock.stock.stock_code', 'stock.stock.page_code'])->first();
             // get outstanding fullfillment
@@ -255,6 +255,7 @@ class OpnameController extends Controller
                 'sort' => 'asc',
                 'field' => 'opname_qty_from'
             );
+        if($input['sort']['field'] == "stock_code") $input['sort']['field'] = "stock.stock.".$input['sort']['field'];
 
         // whole query
         $sup = Opname::selectRaw('stock.opname.*, stock.stock.stock_code, master.master_stock.stock_name, master.master_stock.stock_size, master.master_stock.stock_brand, master.master_stock.stock_type')

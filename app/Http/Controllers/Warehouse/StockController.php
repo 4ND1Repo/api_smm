@@ -263,6 +263,7 @@ class StockController extends Controller
                 'sort' => 'asc',
                 'field' => 'stock_name'
             );
+        if($input['sort']['field'] == "stock_code") $input['sort']['field'] = "stock.stock.".$input['sort']['field'];
 
         // whole query
         $sup = Stock::selectRaw('stock.stock.main_stock_code, master.master_stock.*, master.master_measure.measure_type, qty.stock_qty, cabinet.cabinet_name')

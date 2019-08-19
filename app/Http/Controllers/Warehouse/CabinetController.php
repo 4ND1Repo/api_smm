@@ -91,6 +91,7 @@ class CabinetController extends Controller
                 'sort' => 'asc',
                 'field' => 'stock_name'
             );
+        if($input['sort']['field'] == "stock_code") $input['sort']['field'] = "stock.stock.".$input['sort']['field'];
 
         // whole query
         $sup = Cabinet::selectRaw('master.master_cabinet.cabinet_name, master.master_stock.*, stock.cabinet.stock_cabinet_code')
@@ -122,7 +123,7 @@ class CabinetController extends Controller
         $count_all = $sup->count();
         // get total page from count all
         $pages = (!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))? ceil($count_all/$input['pagination']['perpage']):1;
-        
+
         $sup->orderBy($input['sort']['field'],$input['sort']['sort']);
 
         // skipping for next page

@@ -116,6 +116,7 @@ class ListBuyController extends Controller
                 'sort' => 'asc',
                 'field' => 'stock_name'
             );
+        if($input['sort']['field'] == "stock_code") $input['sort']['field'] = "stock.stock.".$input['sort']['field'];
 
         // whole query
         $sup = Stock::selectRaw("stock.stock.main_stock_code, master.master_stock.*, master.master_measure.measure_type, qty.stock_qty, cabinet.cabinet_name, (SELECT TOP 1 document.purchase_order.po_code FROM document.purchase_order JOIN document.purchase_order_detail ON document.purchase_order.po_code=document.purchase_order_detail.po_code WHERE document.purchase_order.status = 'ST06' AND document.purchase_order_detail.main_stock_code=stock.stock.main_stock_code ORDER BY document.purchase_order.po_code ASC) AS po_code, (SELECT SUM(rqd.req_tools_qty) as qty FROM document.request_tools_detail rqd JOIN document.request_tools rq ON rq.req_tools_code = rqd.req_tools_code WHERE rqd.stock_code = master.master_stock.stock_code AND rq.page_code='".$input['page_code']."' AND rqd.fullfillment=0 GROUP BY rqd.stock_code, rq.page_code, rqd.fullfillment) AS need_qty")
@@ -126,7 +127,7 @@ class ListBuyController extends Controller
         ->where(['stock.stock.page_code' => $input['page_code']])
         ->where(function($sup){
           $sup->whereRaw(DB::raw('(CASE WHEN [qty].[stock_qty] IS NULL THEN 0 ELSE [qty].[stock_qty] END) <= [master].[master_stock].[stock_min_qty]'));
-          $sup->orWhereRaw(DB::raw("(SELECT COUNT(stock_code) AS cnt FROM document.request_tools_detail WHERE stock_code = master.master_stock.stock_code AND fullfillment = 0 GROUP BY stock_code) > 0 "));
+          $sup->orWhereRaw(DB::raw("(SELECT COUNT(stock_code) AS cnt FROM document.request_tools_detail WHERE document.request_tools_detail.stock_code = master.master_stock.stock_code AND fullfillment = 0 GROUP BY document.request_tools_detail.stock_code) > 0 "));
         });
 
         // where condition
