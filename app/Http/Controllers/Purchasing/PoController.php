@@ -100,6 +100,23 @@ class PoController extends Controller
         return response()->json(Api::response(true,"Sukses",$data),200);
     }
 
+    public function print_data(Request $r){
+        $query = PODetail::selectRaw('master.master_stock.*, document.purchase_order_detail.*, master.master_supplier.supplier_name, master.master_supplier.supplier_address, master.master_supplier.supplier_phone, master.master_city.city_name, master.master_measure.measure_type, document.purchase_order.po_date')
+                ->join('stock.stock', 'stock.stock.main_stock_code', '=', 'document.purchase_order_detail.main_stock_code')
+                ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code')
+                ->join('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
+                ->join('document.purchase_order', 'document.purchase_order.po_code', '=', 'document.purchase_order_detail.po_code')
+                ->leftJoin('master.master_supplier', 'master.master_supplier.supplier_code', '=', 'document.purchase_order_detail.supplier_code')
+                ->leftJoin('master.master_city', 'master.master_city.city_code', '=', 'master.master_supplier.city_code')
+                ->where('document.purchase_order_detail.po_code',$r->po_code)->get();
+        $data = [];
+        foreach ($query as $i => $row) {
+          if(!is_null($row->supplier_code) && !empty($row->supplier_code))
+            $data[$row->supplier_code][] = $row;
+        }
+        return response()->json(Api::response(true,"Sukses",$data),200);
+    }
+
     public function check_price(Request $r){
         $tmp = explode(' - ',$r->supplier_code);
         $query = PODetail::selectRaw('document.purchase_order_detail.stock_price')

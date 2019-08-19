@@ -220,6 +220,7 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
                 $router->post('check_price', 'Purchasing\PoController@check_price');
                 $router->post('cancel', 'Purchasing\PoController@cancel');
                 $router->post('process', 'Purchasing\PoController@process');
+                $router->post('print_data', 'Purchasing\PoController@print_data');
                 $router->post('get', 'Purchasing\PoController@get');
                 $router->post('grid', 'Purchasing\PoController@grid');
                 // history group
@@ -286,6 +287,7 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
             $router->post('find_by_stock', 'Warehouse\StockController@find_by_stock');
             $router->post('add', 'Warehouse\StockController@add');
             $router->post('edit', 'Warehouse\StockController@edit');
+            $router->post('delete', 'Warehouse\StockController@delete');
             $router->post('autocomplete', 'Warehouse\StockController@autocomplete');
             $router->post('get','Warehouse\StockController@get');
             $router->post('grid','Warehouse\StockController@grid');
