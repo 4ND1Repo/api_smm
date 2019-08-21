@@ -162,7 +162,9 @@ class StockController extends Controller
     public function delete(Request $r){
         // delete from stock qty first then main stock
         Qty::where(['main_stock_code' => $r->main_stock_code])->delete();
+        $stock_code = Stock::where(['main_stock_code' => $r->main_stock_code])->first()->stock_code;
         Stock::where(['main_stock_code' => $r->main_stock_code])->delete();
+        MasterStock::where(['stock_code' => $stock_code])->delete();
 
         return response()->json(Api::response(true,'Sukses'),200);
     }

@@ -212,7 +212,7 @@ class UserController extends Controller
         $return = [];
 
         $auto = DB::select(DB::raw("SELECT * FROM (
-            SELECT nik, (nik + ' - ' + nik) as user_name
+            SELECT nik, (nik + ' - ' + CASE WHEN (SELECT (first_name + ' ' + last_name) AS person_name FROM account.user_biodata WHERE nik = [account].[user].nik) IS NOT NULL THEN (SELECT (first_name + ' ' + last_name) AS person_name FROM account.user_biodata WHERE nik = [account].[user].nik) ELSE nik END) as user_name
             FROM account.[user]
         ) as tmp_table WHERE user_name LIKE '%".$r->find."%'"));
         if(count($auto) > 0)
