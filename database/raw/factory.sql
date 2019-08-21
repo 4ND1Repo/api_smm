@@ -19,8 +19,8 @@ GO
 
 CREATE TABLE [document].[notification](
 	[notification_id] [bigint] NOT NULL IDENTITY(1,1),
-	[notification_from] [varchar](10) NULL,
-	[notification_to] [varchar](10) NULL,
+	[notification_from] [varchar](20) NULL,
+	[notification_to] [varchar](20) NULL,
 	[notification_read] [bit] NOT NULL DEFAULT((0)),
 	[notification_send] [bit] NOT NULL DEFAULT((0)),
 	[notification_title] [varchar](100) NULL,
@@ -33,11 +33,11 @@ GO
 
 CREATE TABLE [document].[complaint](
 	[complaint_id] [bigint] NOT NULL IDENTITY(1,1),
-	[complaint_to] [varchar](10) NULL,
+	[complaint_to] [varchar](20) NULL,
 	[complaint_type] [varchar](10) NOT NULL DEFAULT(('CMPT001')),
 	[complaint_description] [text] NOT NULL,
 	[complaint_anonymous] [bit] NOT NULL DEFAULT((0)),
-	[create_by] [varchar](10) NOT NULL,
+	[create_by] [varchar](20) NOT NULL,
 	[create_date] [datetime] NOT NULL DEFAULT(GETDATE()),
 	[status] [varchar](10) NOT NULL DEFAULT(('ST01'))
 ) ON [PRIMARY]
@@ -48,17 +48,34 @@ CREATE TABLE [document].[request_tools](
 	[page_code] [varchar](20) NOT NULL,
 	[page_code_from] [varchar](20) NOT NULL,
 	[req_tools_date] [date] NOT NULL DEFAULT(GETDATE()),
-	[req_nik] [varchar](10) NULL,
+	[req_nik] [varchar](20) NULL,
 	[name_of_request] [varchar](30) NOT NULL,
-	[create_by] [varchar](10) NOT NULL,
+	[create_by] [varchar](20) NOT NULL,
 	[create_date] [datetime] NOT NULL DEFAULT(GETDATE()),
 	[approve_by] [varchar](20) NULL,
 	[approve_date] [datetime] NULL,
 	[reject_by] [varchar](20) NULL,
 	[reject_date] [datetime] NULL,
 	[status] [varchar](10) NOT NULL DEFAULT(('ST02')),
-	[finish_by] [varchar](10) NULL,
+	[finish_by] [varchar](20) NULL,
 	[finish_date] [datetime] NULL
+) ON [PRIMARY]
+GO
+
+CREATE TABLE [document].[borrowed](
+	[borrowed_code] [varchar](20) NOT NULL,
+	[main_stock_code] [varchar](20) NOT NULL,
+	[borrowed_qty] [decimal](10,2) NOT NULL,
+	[borrowed_date] [date] NOT NULL DEFAULT(GETDATE()),
+	[borrowed_long_term] [int] NOT NULL,
+	[borrowed_notes] [text] NULL,
+	[nik] [varchar](20) NOT NULL,
+	[take_nik] [varchar](20) NULL,
+	[create_by] [varchar](20) NOT NULL,
+	[create_date] [datetime] NOT NULL DEFAULT(GETDATE()),
+	[finish_by] [varchar](20) NULL,
+	[finish_date] [datetime] NULL,
+	[status] [varchar](10) NOT NULL DEFAULT(('ST02'))
 ) ON [PRIMARY]
 GO
 
@@ -69,7 +86,7 @@ CREATE TABLE [document].[request_tools_detail](
 	[req_tools_notes] [varchar](255) NULL,
 	[req_take_nik] [varchar](20) NULL,
 	[fullfillment] [bit] NOT NULL DEFAULT((1)),
-	[finish_by] [varchar](10) NULL,
+	[finish_by] [varchar](20) NULL,
 	[finish_date] [datetime] NULL
 ) ON [PRIMARY]
 GO
@@ -79,14 +96,14 @@ CREATE TABLE [document].[purchase_order](
 	[page_code] [varchar](20) NOT NULL,
 	[page_code_destination] [varchar](20) NOT NULL,
 	[po_date] [date] NOT NULL DEFAULT(GETDATE()),
-	[nik] [varchar](10) NOT NULL,
+	[nik] [varchar](20) NOT NULL,
 	[status] [varchar](10) NOT NULL DEFAULT(('ST06')),
 	[reason] [text] NULL,
-	[create_by] [varchar](10) NOT NULL,
+	[create_by] [varchar](20) NOT NULL,
 	[create_date] [datetime] NOT NULL DEFAULT(GETDATE()),
-	[process_by] [varchar](10) NULL,
+	[process_by] [varchar](20) NULL,
 	[process_date] [datetime] NULL,
-	[finish_by] [varchar](10) NULL,
+	[finish_by] [varchar](20) NULL,
 	[finish_date] [datetime] NULL
 ) ON [PRIMARY]
 GO
@@ -101,7 +118,7 @@ CREATE TABLE [document].[purchase_order_detail](
 	[stock_delivery_price] [decimal](20,2) NULL,
 	[po_old_qty] [decimal](20,2) NULL,
 	[po_notes] [varchar](255) NULL,
-	[edit_by] [varchar](10) NULL,
+	[edit_by] [varchar](20) NULL,
 	[edit_date] [datetime] NULL
 ) ON [PRIMARY]
 GO
@@ -112,7 +129,7 @@ CREATE TABLE [document].[delivery_order](
 	[page_code] [varchar](20) NOT NULL,
 	[main_stock_code] [varchar](20) NOT NULL,
 	[do_qty] [decimal](20,2) NOT NULL,
-	[create_by] [varchar](10) NOT NULL,
+	[create_by] [varchar](20) NOT NULL,
 	[create_date] [datetime] NOT NULL DEFAULT(GETDATE())
 ) ON [PRIMARY]
 GO
@@ -162,7 +179,7 @@ CREATE TABLE [stock].[stock](
 	[main_stock_code] [varchar](20) NOT NULL,
 	[stock_code] [varchar](20) NOT NULL,
 	[page_code] [varchar](10) NOT NULL,
-	[nik] [varchar](10) NOT NULL,
+	[nik] [varchar](20) NOT NULL,
 	[main_stock_date] [datetime] NOT NULL DEFAULT(GETDATE()),
 ) ON [PRIMARY]
 GO
@@ -195,11 +212,11 @@ CREATE TABLE [stock].[opname](
 	[opname_date_from] [date] NOT NULL DEFAULT(GETDATE()),
 	[opname_qty] [decimal](20,2) NOT NULL,
 	[opname_notes] [varchar](255) NULL,
-	[create_by] [VARCHAR](10) NOT NULL,
+	[create_by] [VARCHAR](20) NOT NULL,
 	[create_date] [datetime] NOT NULL DEFAULT(GETDATE()),
-	[approve_by] [varchar](10) NULL,
+	[approve_by] [varchar](20) NULL,
 	[approve_date] [datetime] NULL,
-	[reject_by] [varchar](10) NULL,
+	[reject_by] [varchar](20) NULL,
 	[reject_date] [datetime] NULL
 ) ON [PRIMARY]
 GO
@@ -334,7 +351,7 @@ GO
 CREATE PROCEDURE [stock].[stock_out]
 	@stcode VARCHAR(20),
 	@qty DECIMAL(20,2),
-	@nik VARCHAR(10),
+	@nik VARCHAR(20),
 	@page VARCHAR(10),
 	@notes VARCHAR(255)
 AS
@@ -440,7 +457,7 @@ INSERT INTO [master].[master_menu](id_menu, menu_name, menu_url,menu_icon,id_par
 (2, 'Request', '/', 'fa fa-upload', NULL),
 (3, 'Purchase Order', '/req/po', 'fa fa-file', 2),
 (4, 'Barang', '/req/tools', 'fa fa-hammer', 2),
-(5, 'Terima Barang', '/req/do', 'fa fa-file-alt', 2),
+(5, 'Terima Barang', '/req/do', 'fa fa-truck-loading', 2),
 (6, 'Pembelian(PO)', '/req/po', 'fa fa-file', 2),
 (7, 'Riwayat', '/req/po/history', 'fa fa-file-alt', 2),
 (8, 'Tentang', '/about', 'fa fa-link', NULL),
@@ -459,7 +476,8 @@ INSERT INTO [master].[master_menu](id_menu, menu_name, menu_url,menu_icon,id_par
 (21, 'Management', '/', 'fa fa-book', NULL),
 (22, 'User', '/mng/user', 'fa fa-users-cog', 21),
 (23, 'Menu', '/mng/menu', 'fa fa-clipboard', 21),
-(24, 'Group', '/mng/group', 'fa fa-users', 21)
+(24, 'Group', '/mng/group', 'fa fa-users', 21),
+(25, 'Barang Pinjaman', '/req/borrow', 'fa fa-people-carry', 2)
 GO
 INSERT INTO [master].[master_company](company_code,company_name) VALUES
 ('CP01','Sarana Makin Mulia, PT.')
@@ -507,18 +525,24 @@ INSERT INTO [account].[user_menu](group_code, id_menu, "add", "edit", "del") VAL
 ('USGP004', 6, 1, 1, 1),
 ('USGP004', 7, 1, 1, 1),
 ('USGP004', 9, 1, 1, 1),
-('USGP004', 11, 1, 1, 1)
+('USGP004', 11, 1, 1, 1),
+('USGP005', 1, 1, 1, 1),
+('USGP005', 2, 1, 1, 1),
+('USGP005', 4, 1, 1, 1),
+('USGP005', 25, 1, 1, 1)
 GO
 INSERT INTO [account].[user_group](group_code, group_name, page_code, company_code, department_code, division_code) VALUES
 ('USGP001', 'Superuser', 'su', NULL, NULL, NULL),
 ('USGP002', 'Gudang Umum', 'wh', 'CP01', 'SMDP01', 'SMDV01'),
 ('USGP003', 'Marketing', 'mk', 'CP01', 'SMDP02', 'SMDV04'),
-('USGP004', 'Pembelian', 'pur', 'CP01', 'SMDP02', 'SMDV03')
+('USGP004', 'Pembelian', 'pur', 'CP01', 'SMDP02', 'SMDV03'),
+('USGP005', 'Operator', 'opr', 'CP01', 'SMDP02', 'SMDV03')
 INSERT INTO [account].[user](nik,pwd_hash,group_code,status_code) VALUES
 ('superuser', '$2y$12$rbfkWNlw4gj7.OxIm80UsOte/uvI9Cb3Ndn6/TlGHty5LtT3N49vW', 'USGP001', 'ST01'),
 ('SMM01001', '$2y$12$rbfkWNlw4gj7.OxIm80UsOte/uvI9Cb3Ndn6/TlGHty5LtT3N49vW', 'USGP002', 'ST01'),
 ('SMM01002', '$2y$12$rbfkWNlw4gj7.OxIm80UsOte/uvI9Cb3Ndn6/TlGHty5LtT3N49vW', 'USGP003', 'ST01'),
-('SMM01003', '$2y$12$rbfkWNlw4gj7.OxIm80UsOte/uvI9Cb3Ndn6/TlGHty5LtT3N49vW', 'USGP004', 'ST01')
+('SMM01003', '$2y$12$rbfkWNlw4gj7.OxIm80UsOte/uvI9Cb3Ndn6/TlGHty5LtT3N49vW', 'USGP004', 'ST01'),
+('SMM01004', '$2y$12$rbfkWNlw4gj7.OxIm80UsOte/uvI9Cb3Ndn6/TlGHty5LtT3N49vW', 'USGP005', 'ST01')
 GO
 
 

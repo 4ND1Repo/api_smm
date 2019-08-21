@@ -84,13 +84,19 @@ class StockController extends Controller
     }
 
     public function find_by_stock(Request $r){
-        $data = Stock::selectRaw("stock.stock.main_stock_code, master.master_stock.*, qty.stock_qty, master.master_measure.measure_type, (SELECT SUM(rqd.req_tools_qty) as qty FROM document.request_tools_detail rqd JOIN document.request_tools rq ON rq.req_tools_code = rqd.req_tools_code WHERE rqd.stock_code = master.master_stock.stock_code AND rq.page_code='".$r->page_code."' AND rqd.fullfillment=0 GROUP BY rqd.stock_code, rq.page_code, rqd.fullfillment) as need_qty")
+        $qty = 'qty.stock_qty';
+        // if find stock by borrow page
+        if($r->has('borrow'))
+          $qty = "(qty.stock_qty - CASE WHEN (SELECT SUM(borrowed_qty) FROM document.borrowed WHERE main_stock_code=stock.stock.main_stock_code AND status = 'ST02') IS NOT NULL THEN (SELECT SUM(borrowed_qty) FROM document.borrowed WHERE main_stock_code=stock.stock.main_stock_code AND status = 'ST02') ELSE 0 END) AS stock_qty";
+
+        $data = Stock::selectRaw("stock.stock.main_stock_code, master.master_stock.*, ".$qty.", master.master_measure.measure_type, (SELECT SUM(rqd.req_tools_qty) as qty FROM document.request_tools_detail rqd JOIN document.request_tools rq ON rq.req_tools_code = rqd.req_tools_code WHERE rqd.stock_code = master.master_stock.stock_code AND rq.page_code='".$r->page_code."' AND rqd.fullfillment=0 GROUP BY rqd.stock_code, rq.page_code, rqd.fullfillment) as need_qty")
           ->join('master.master_stock','master.master_stock.stock_code','=','stock.stock.stock_code')
           ->leftJoin(DB::raw("(SELECT DISTINCT main_stock_code, SUM(qty) AS stock_qty FROM stock.qty GROUP BY main_stock_code ) AS qty"),'qty.main_stock_code','=','stock.stock.main_stock_code')
           ->leftJoin("master.master_measure",'master.master_measure.measure_code','=','master.master_stock.measure_code')
           ->where('stock.stock.stock_code',$r->stock_code)
           ->where('stock.stock.page_code',$r->page_code)
           ->first();
+        $data['query'] = $qty;
         return response()->json(Api::response(true,"Sukses",$data),200);
     }
 
@@ -168,7 +174,7 @@ class StockController extends Controller
             SELECT stock.stock.main_stock_code, (master.master_stock.stock_code + ' - ' + master.master_stock.stock_name + ' - ' + master.master_stock.stock_type + ' - ' + master.master_stock.stock_size + ' - ' + master.master_stock.stock_brand + ' - ' + master.master_measure.measure_type) as stock_name,
             (SELECT SUM(rqd.req_tools_qty) as qty FROM document.request_tools_detail rqd JOIN document.request_tools rq ON rq.req_tools_code = rqd.req_tools_code WHERE rqd.stock_code = master.master_stock.stock_code AND rq.page_code='".$r->page_code."' AND rqd.fullfillment=0 GROUP BY rqd.stock_code, rq.page_code, rqd.fullfillment) as need_qty
             FROM stock.stock
-            JOIN master.master_stock ON master.master_stock.stock_code = stock.stock.stock_code
+            JOIN master.master_stock ON master.master_stock.stock_code = stock.stock.stock_code".($r->has('stock_daily_use')?" AND stock_daily_use = 1":"")."
             JOIN master.master_measure ON master.master_measure.measure_code = master.master_stock.measure_code
         ) as stock WHERE stock_name LIKE '%".$r->find."%'"));
         if(count($stock) > 0)

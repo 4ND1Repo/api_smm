@@ -278,6 +278,17 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
                 $router->post('get','Document\RequestController@get_do');
                 $router->post('grid','Document\RequestController@grid_do');
             });
+
+            // Borrow group
+            $router->group(['prefix' => 'borrow'], function() use($router){
+                $router->get('find/{id}','Document\BorrowController@find');
+                $router->post('add','Document\BorrowController@add');
+                $router->post('edit','Document\BorrowController@edit');
+                $router->post('delete','Document\BorrowController@delete');
+                // $router->post('get','Document\RequestController@get_tools');
+                $router->post('grid','Document\BorrowController@grid');
+                // $router->post('send','Document\RequestController@send_tools');
+            });
         });
 
         // Warehouse Stock group
@@ -317,6 +328,11 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
                 $router->post('grid', 'Warehouse\OpnameController@grid');
                 $router->post('approve', 'Warehouse\OpnameController@approve');
                 $router->post('reject', 'Warehouse\OpnameController@reject');
+            });
+
+            // change first stock
+            $router->group(['prefix' => 'qty'], function() use($router){
+                $router->post('add', 'Warehouse\QtyController@add');
             });
         });
     });
