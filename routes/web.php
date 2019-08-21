@@ -324,6 +324,7 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
                 $router->get('find/{id}', 'Warehouse\OpnameController@find');
                 $router->get('date', 'Warehouse\OpnameController@date');
                 $router->post('add', 'Warehouse\OpnameController@add');
+                $router->post('delete', 'Warehouse\OpnameController@delete');
                 $router->post('get', 'Warehouse\OpnameController@get');
                 $router->post('grid', 'Warehouse\OpnameController@grid');
                 $router->post('approve', 'Warehouse\OpnameController@approve');

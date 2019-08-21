@@ -77,6 +77,13 @@ class OpnameController extends Controller
         return response()->json(Api::response(false, 'Stok sedang menunggu Approve'),200);
     }
 
+    public function delete(Request $r){
+        list($main_stock_code,$opname_date_from) = explode('|', urldecode($r->opname));
+        Opname::where(['main_stock_code' => $main_stock_code, 'opname_date_from' => $opname_date_from, 'approve_by' => NULL, 'reject_by' => NULL])->delete();
+
+        return response()->json(Api::response(true, 'sukses'),200);
+    }
+
     public function approve(Request $r){
         list($main_stock_code,$opname_date_from) = explode('|', urldecode($r->opname));
         $date = date("Y-m-d H:i:s");
