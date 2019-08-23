@@ -207,7 +207,6 @@ class OpnameController extends Controller
         ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code')
         ->leftJoin('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
         ->where(['stock.stock.page_code' => $input['page_code']]);
-
         // where condition
         if(isset($input['query'])){
             if(!is_null($input['query']) and !empty($input['query'])){
@@ -215,13 +214,17 @@ class OpnameController extends Controller
                     if(in_array($field, array('stock_brand')) && (!empty($val) && !is_null($val)))
                         $sup->where("master.master_stock.".$field,($val=="null"?NULL:$val));
                     else if(in_array($field, array('approve'))){
+                      if(!empty($val) && !is_null($val)){
                         if($val==1)
-                            $sup->whereRaw("stock.opname.approve_by IS NOT NULL");
+                          $sup->whereRaw("stock.opname.approve_by IS NOT NULL");
                         else if($val==0)
-                            $sup->whereRaw("stock.opname.reject_by IS NOT NULL");
+                          $sup->whereRaw("stock.opname.reject_by IS NOT NULL");
+                      }
                     }
-                    else if(in_array($field, array('opname_date_from')))
+                    else if(in_array($field, array('opname_date_from'))){
+                      if(!empty($val) && !is_null($val))
                         $sup->where("stock.opname.".$field,($val=="null"?NULL:$val));
+                    }
                     else if($field == 'find'){
                         if(!empty($val)){
                             $sup->where(function($sup) use($column_search,$val){
