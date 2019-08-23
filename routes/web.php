@@ -334,6 +334,11 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
             // change first stock
             $router->group(['prefix' => 'qty'], function() use($router){
                 $router->post('add', 'Warehouse\QtyController@add');
+                // grid group
+                $router->group(['prefix' => 'grid'], function() use($router){
+                    $router->post('in', 'Warehouse\QtyController@grid_in');
+                    $router->post('out', 'Warehouse\QtyController@grid_out');
+                });
             });
         });
     });

@@ -159,4 +159,177 @@ class QtyController extends Controller
         return response()->json(Api::response(true,'Berhasil'),200);
     }
 
+    public function grid_in(Request $r){
+        // collect data from post
+        $input = $r->input();
+
+        $column_search = [
+            'stock.qty.stock_notes',
+            'master.master_stock.stock_name',
+            'master.master_stock.stock_size',
+            'master.master_stock.stock_brand',
+            'master.master_stock.stock_type',
+            'master.master_stock.stock_color',
+            'master.master_measure.measure_type',
+            'master.master_stock.stock_min_qty',
+            'master.master_supplier.supplier_name'
+        ];
+
+        // generate default
+        if(!isset($input['sort']))
+            $input['sort'] = array(
+                'sort' => 'asc',
+                'field' => 'stock_name'
+            );
+
+        // whole query
+        $sup = Qty::selectRaw('stock.qty.stock_notes, stock.qty.nik, stock.qty.stock_date, master.master_supplier.supplier_name, stock.qty.main_stock_code, master.master_stock.*, master.master_measure.measure_type, (stock.qty.qty + CASE WHEN (
+            SELECT TOP 1 SUM(qty) FROM stock.qty_out WHERE
+                main_stock_code=stock.qty.main_stock_code
+                AND stock_price=stock.qty.stock_price
+                AND stock_date=stock.qty.stock_date
+                AND (supplier_code=stock.qty.supplier_code OR supplier_code IS NULL)
+            GROUP BY main_stock_code, stock_price, stock_date, supplier_code
+            ) IS NOT NULL THEN (
+                SELECT TOP 1 SUM(qty) FROM stock.qty_out WHERE
+                    main_stock_code=stock.qty.main_stock_code
+                    AND stock_price=stock.qty.stock_price
+                    AND stock_date=stock.qty.stock_date
+                    AND (supplier_code=stock.qty.supplier_code OR supplier_code IS NULL)
+                GROUP BY main_stock_code, stock_price, stock_date, supplier_code
+                ) ELSE 0 END) AS stock_qty')
+        ->join('stock.stock', 'stock.stock.main_stock_code', '=', 'stock.qty.main_stock_code')
+        ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code')
+        ->join('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
+        ->leftJoin('master.master_supplier', 'master.master_supplier.supplier_code', '=', 'stock.qty.supplier_code')
+        ->where(['stock.stock.page_code' => $input['page_code'], 'stock.stock.main_stock_code' => $input['main_stock_code']]);
+
+        // where condition
+        if(isset($input['query'])){
+            if(!is_null($input['query']) and !empty($input['query'])){
+                foreach($input['query'] as $field => $val){
+                    if(in_array($field, array('measure_code','stock_brand','stock_daily_use')))
+                        $sup->where("master.master_stock.".$field,($val=="null"?NULL:$val));
+                    else if($field == 'find'){
+                        if(!empty($val)){
+                            $sup->where(function($sup) use($column_search,$val){
+                                foreach($column_search as $row)
+                                    $sup->orWhere($row,'like',"%".$val."%");
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        // $sup->where();
+        $count_all = $sup->count();
+        // get total page from count all
+        $pages = (!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))? ceil($count_all/$input['pagination']['perpage']):1;
+
+        $sup->orderBy($input['sort']['field'],$input['sort']['sort']);
+
+        // skipping for next page
+        $skip = (!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))?($input['pagination']['page']-1)*$input['pagination']['perpage']:0;
+        $sup->skip($skip);
+        if(!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))
+            $sup->take($input['pagination']['perpage']);
+
+
+        $row = $sup->get();
+        $data = [
+            "meta"=> [
+                "page"=> $input['pagination']['page'],
+                "pages"=> $pages,
+                "perpage"=> (!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))?$input['pagination']['perpage']:-1,
+                "total"=> $count_all,
+                "sort"=> $input['sort']['sort'],
+                "field"=> $input['sort']['field']
+            ],
+            "data"=> $row
+        ];
+
+        return response()->json($data,200);
+    }
+
+    public function grid_out(Request $r){
+        // collect data from post
+        $input = $r->input();
+
+        $column_search = [
+            'stock.qty_out.nik',
+            'stock.qty_out.stock_notes',
+            'master.master_stock.stock_name',
+            'master.master_stock.stock_size',
+            'master.master_stock.stock_brand',
+            'master.master_stock.stock_type',
+            'master.master_stock.stock_color',
+            'master.master_measure.measure_type',
+            'stock.qty_out.qty',
+            'master.master_stock.stock_min_qty',
+            'master.master_supplier.supplier_name'
+        ];
+
+        // generate default
+        if(!isset($input['sort']))
+            $input['sort'] = array(
+                'sort' => 'asc',
+                'field' => 'stock_name'
+            );
+
+        // whole query
+        $sup = QtyOut::selectRaw('stock.qty_out.stock_notes, stock.qty_out.nik, stock.qty_out.stock_date, stock.qty_out.stock_out_date, stock.qty_out.stock_price, master.master_supplier.supplier_name, stock.qty_out.main_stock_code, master.master_stock.*, master.master_measure.measure_type, stock.qty_out.qty AS stock_qty')
+        ->join('stock.stock', 'stock.stock.main_stock_code', '=', 'stock.qty_out.main_stock_code')
+        ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code')
+        ->join('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
+        ->leftJoin('master.master_supplier', 'master.master_supplier.supplier_code', '=', 'stock.qty_out.supplier_code')
+        ->where(['stock.stock.page_code' => $input['page_code'], 'stock.stock.main_stock_code' => $input['main_stock_code']]);
+
+        // where condition
+        if(isset($input['query'])){
+            if(!is_null($input['query']) and !empty($input['query'])){
+                foreach($input['query'] as $field => $val){
+                    if(in_array($field, array('measure_code','stock_brand','stock_daily_use'))){
+                      if(!empty($val) && !is_null($val))
+                        $sup->where("master.master_stock.".$field,($val=="null"?NULL:$val));
+                    }
+                    else if($field == 'find'){
+                        if(!empty($val)){
+                            $sup->where(function($sup) use($column_search,$val){
+                                foreach($column_search as $row)
+                                    $sup->orWhere($row,'like',"%".$val."%");
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        // $sup->where();
+        $count_all = $sup->count();
+        // get total page from count all
+        $pages = (!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))? ceil($count_all/$input['pagination']['perpage']):1;
+
+        $sup->orderBy($input['sort']['field'],$input['sort']['sort']);
+
+        // skipping for next page
+        $skip = (!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))?($input['pagination']['page']-1)*$input['pagination']['perpage']:0;
+        $sup->skip($skip);
+        if(!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))
+            $sup->take($input['pagination']['perpage']);
+
+        $row = $sup->get();
+        $data = [
+            "meta"=> [
+                "page"=> $input['pagination']['page'],
+                "pages"=> $pages,
+                "perpage"=> (!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))?$input['pagination']['perpage']:-1,
+                "total"=> $count_all,
+                "sort"=> $input['sort']['sort'],
+                "field"=> $input['sort']['field']
+            ],
+            "data"=> $row
+        ];
+
+        return response()->json($data,200);
+    }
+
 }
