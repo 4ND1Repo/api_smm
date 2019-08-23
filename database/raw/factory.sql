@@ -69,13 +69,16 @@ CREATE TABLE [document].[borrowed](
 	[borrowed_date] [date] NOT NULL DEFAULT(GETDATE()),
 	[borrowed_long_term] [int] NOT NULL,
 	[borrowed_notes] [text] NULL,
+	[borrowed_req_name] [varchar](50) NOT NULL,
+	[borrowed_take_name] [varchar](50) NULL,
+	[company_code] [varchar](10) NULL,
 	[nik] [varchar](20) NOT NULL,
 	[take_nik] [varchar](20) NULL,
 	[create_by] [varchar](20) NOT NULL,
 	[create_date] [datetime] NOT NULL DEFAULT(GETDATE()),
 	[finish_by] [varchar](20) NULL,
 	[finish_date] [datetime] NULL,
-	[status] [varchar](10) NOT NULL DEFAULT(('ST02'))
+	[status] [varchar](10) NOT NULL DEFAULT(('ST06'))
 ) ON [PRIMARY]
 GO
 

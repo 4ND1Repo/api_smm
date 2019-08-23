@@ -284,10 +284,10 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
                 $router->get('find/{id}','Document\BorrowController@find');
                 $router->post('add','Document\BorrowController@add');
                 $router->post('edit','Document\BorrowController@edit');
+                $router->post('return','Document\BorrowController@return_qty');
                 $router->post('delete','Document\BorrowController@delete');
                 // $router->post('get','Document\RequestController@get_tools');
                 $router->post('grid','Document\BorrowController@grid');
-                // $router->post('send','Document\RequestController@send_tools');
             });
         });
 

@@ -87,7 +87,7 @@ class StockController extends Controller
         $qty = 'qty.stock_qty';
         // if find stock by borrow page
         if($r->has('borrow'))
-          $qty = "(qty.stock_qty - CASE WHEN (SELECT SUM(borrowed_qty) FROM document.borrowed WHERE main_stock_code=stock.stock.main_stock_code AND status = 'ST02') IS NOT NULL THEN (SELECT SUM(borrowed_qty) FROM document.borrowed WHERE main_stock_code=stock.stock.main_stock_code AND status = 'ST02') ELSE 0 END) AS stock_qty";
+          $qty = "(qty.stock_qty - CASE WHEN (SELECT SUM(borrowed_qty) FROM document.borrowed WHERE main_stock_code=stock.stock.main_stock_code AND status = 'ST06') IS NOT NULL THEN (SELECT SUM(borrowed_qty) FROM document.borrowed WHERE main_stock_code=stock.stock.main_stock_code AND status = 'ST06') ELSE 0 END) AS stock_qty";
 
         $data = Stock::selectRaw("stock.stock.main_stock_code, master.master_stock.*, ".$qty.", master.master_measure.measure_type, (SELECT SUM(rqd.req_tools_qty) as qty FROM document.request_tools_detail rqd JOIN document.request_tools rq ON rq.req_tools_code = rqd.req_tools_code WHERE rqd.stock_code = master.master_stock.stock_code AND rq.page_code='".$r->page_code."' AND rqd.fullfillment=0 GROUP BY rqd.stock_code, rq.page_code, rqd.fullfillment) as need_qty")
           ->join('master.master_stock','master.master_stock.stock_code','=','stock.stock.stock_code')

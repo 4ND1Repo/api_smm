@@ -10,6 +10,7 @@ use App\Model\Master\MenuModel AS Menu;
 use App\Model\Account\UserModel AS User;
 use App\Model\Account\UserMenuModel AS UserMenu;
 use App\Model\Account\UserGroupModel AS UserGroup;
+use App\Model\Account\UserBiodataModel AS UserBiodata;
 
 // Embed a Helper
 use Illuminate\Http\Request;
@@ -39,7 +40,9 @@ class AuthController extends Controller
                 if(hash::check($r->post('p'),$user->pwd_hash)){
                     // get company_code, department_code, division_code, page_code
                     $q = UserGroup::where(['group_code' => $user->group_code])->first();
-                    return response()->json(Api::response(1,'Sukses', ['nik' => $user->nik, 'photo' => $user->photo, 'company' => $q->company_code, 'department' => $q->department_code, 'division' => $q->division_code, 'page' => $q->page_code, 'group' => $q->group_code]),200);
+                    $bio = UserBiodata::where(['nik' => $user->nik]);
+                    $stat = ($bio->count() > 0)? $bio->first(): false;
+                    return response()->json(Api::response(1,'Sukses', ['nik' => $user->nik, 'name' => ($stat?($stat->first_name." ".$stat->last_name):$user->nik), 'photo' => $user->photo, 'company' => $q->company_code, 'department' => $q->department_code, 'division' => $q->division_code, 'page' => $q->page_code, 'group' => $q->group_code]),200);
                 }
                 return response()->json(Api::response(0,'Kata sandi salah'), 200);
             }

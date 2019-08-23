@@ -66,7 +66,7 @@ class CabinetController extends Controller
                 }
                 return response()->json(Api::response(true,"Sukses"),200);
             }
-            
+
             return response()->json(Api::response(false,"Gagal"),200);
         }
         return response()->json(Api::response(false,'Periksa kembali inputan anda'),200);
@@ -85,7 +85,7 @@ class CabinetController extends Controller
                     Cabinet::where(['cabinet_code' => $cb['parent_cabinet_code'], 'page_code' => $r->page_code])->update(['is_child' => 1]);
             }
         }
-        
+
         return response()->json(Api::response(true,"Sukses"),200);
     }
 
@@ -124,7 +124,7 @@ class CabinetController extends Controller
     public function tree_child(Request $r){
         $data = [];
 
-        $cb = Cabinet::where(['parent_cabinet_code' => $r->parent, 'is_child' => 1])->orderBy('cabinet_name','ASC')->get();
+        $cb = Cabinet::where(['parent_cabinet_code' => $r->parent, 'is_child' => 1])->orderBy('cabinet_name','DESC')->get();
         if($cb->count() > 0){
             $chunk = $cb->toArray();
             $data = array_chunk($chunk,$r->cnt);
