@@ -343,4 +343,13 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
         });
     });
 
+
+
+    // for public api
+    $router->group(['prefix' => 'chart'], function() use($router){
+      // chart stock out data
+      $router->get('stock/out', 'General\ChartController@stock_out');
+      $router->get('stock/out/data', 'General\ChartController@dashboard_data');
+    });
+
 });
