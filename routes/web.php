@@ -204,6 +204,12 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
                 $router->post("update", 'Account\UserController@photo');
             });
         });
+
+        // for activity group
+        $router->group(['prefix' => 'activity'], function() use($router){
+            $router->post("grid", 'Account\ActivityController@grid');
+            $router->post("delete", 'Account\ActivityController@delete');
+        });
     });
 
 
