@@ -10,7 +10,7 @@ use App\Model\Master\CategoryModel AS Category;
 
 // Embed a Helper
 use DB;
-use App\Helpers\Api;
+use App\Helpers\{Api, Log};
 use Illuminate\Http\Request;
 
 
@@ -43,6 +43,11 @@ class CategoryController extends Controller
             $ct->category_code = $r->category_code;
             $ct->category_name = $r->category_name;
             $res = $ct->save();
+            Log::add([
+              'type' => 'Add',
+              'nik' => $r->nik,
+              'description' => 'Menambah Kategori : '.$r->category_name
+            ]);
         }
 
         return response()->json(Api::response($res,$res?"Sukses":"Satuan telah ada"),200);
@@ -61,6 +66,11 @@ class CategoryController extends Controller
                 $old->update([
                     'category_name' => $r->input('category_name')
                 ]);
+                Log::add([
+                  'type' => 'Edit',
+                  'nik' => $r->nik,
+                  'description' => 'Mengubah Kategori : '.$r->input('category_name')
+                ]);
             } else
                 return response()->json(Api::response(false,"Kategori sudah ada"),200);
         } else
@@ -70,7 +80,13 @@ class CategoryController extends Controller
     }
 
     public function delete(Request $r){
+        $cat = Category::where('category_code',$r->category_code)->first();
         $query = Category::where('category_code',$r->category_code)->delete();
+        Log::add([
+          'type' => 'Delete',
+          'nik' => $r->nik,
+          'description' => 'Menghapus Kategori : '.$cat->category_name
+        ]);
         return response()->json(Api::response(true,"Sukses"),200);
     }
 

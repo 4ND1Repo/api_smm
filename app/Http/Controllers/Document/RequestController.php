@@ -17,7 +17,7 @@ use App\Model\Stock\QtyModel AS Qty;
 
 // Embed a Helper
 use DB;
-use App\Helpers\Api;
+use App\Helpers\{Api, Log};
 use Illuminate\Http\Request;
 
 
@@ -97,6 +97,7 @@ class RequestController extends Controller
                 $drt->req_nik = $r->req_nik;
         }
         if($drt->save()){
+            $lst = [];
             foreach($r->items as $stock_code => $qty){
                 $drtd = new ReqToolsDetail;
                 $drtd->req_tools_code = $drt->req_tools_code;
@@ -108,8 +109,13 @@ class RequestController extends Controller
                     $drtd->fullfillment = 0;
                 }
                 $drtd->save();
+                $lst[] = $stock_code;
             }
-
+            Log::add([
+              'type' => 'Add',
+              'nik' => $r->nik,
+              'description' => 'Menambah Request Barang : '.implode(', ', $lst)
+            ]);
             return response()->json(Api::response(true,'Sukses'),200);
         }
 
@@ -121,6 +127,12 @@ class RequestController extends Controller
         ReqToolsDetail::where(['req_tools_code' => $r->req_tools_code])->delete();
         // second delete request tools
         ReqTools::where(['req_tools_code' => $r->req_tools_code])->delete();
+
+        Log::add([
+          'type' => 'Delete',
+          'nik' => $r->nik,
+          'description' => 'Menghapus Request Barang : '.$r->req_tools_code
+        ]);
 
         return response()->json(Api::response(true,'Sukses'),200);
     }
@@ -144,6 +156,11 @@ class RequestController extends Controller
                 ReqTools::where(['req_tools_code'=>$stock->req_tools_code])->update(['status' => 'ST05','finish_by' => $r->nik, 'finish_date' => date('Y-m-d H:i:s')]);
             }
         }
+        Log::add([
+          'type' => 'Add',
+          'nik' => $r->nik,
+          'description' => 'Pengambilan Request Barang : '.$r->stock_code
+        ]);
         return Api::response(true,"Sukses",$data);
     }
 
@@ -291,7 +308,11 @@ class RequestController extends Controller
                 $pod->po_notes = isset($r->notes[$main_stock_code])?$r->notes[$main_stock_code]:NULL;
                 $pod->save();
             }
-
+            Log::add([
+              'type' => 'Add',
+              'nik' => $r->nik,
+              'description' => 'Menambah PO Barang : '.$po->po_code
+            ]);
             return response()->json(Api::response(true,'Sukses'),200);
         }
 
@@ -314,6 +335,12 @@ class RequestController extends Controller
         PODetail::where(['po_code' => $r->po_code])->delete();
         // second delete request tools
         PO::where(['po_code' => $r->po_code])->delete();
+
+        Log::add([
+          'type' => 'Delete',
+          'nik' => $r->nik,
+          'description' => 'Menghapus PO Barang : '.$r->po_code
+        ]);
 
         return response()->json(Api::response(true,'Sukses'),200);
     }
@@ -522,6 +549,11 @@ class RequestController extends Controller
             PO::where(['po_code' => $po_code])->update(['status' => 'ST05']);
           }
         }
+        Log::add([
+          'type' => 'Add',
+          'nik' => $r->nik,
+          'description' => 'Menambah terima barang dari PO : '.$po_code
+        ]);
         return response()->json(Api::response(true,'Sukses'),200);
     }
 

@@ -12,7 +12,7 @@ use App\Model\Stock\QtyModel AS Qty;
 
 // Embed a Helper
 use DB;
-use App\Helpers\Api;
+use App\Helpers\{Api, Log};
 use Illuminate\Http\Request;
 
 
@@ -64,6 +64,12 @@ class StockController extends Controller
         $stock->stock_daily_use = $r->has('stock_daily_use')?1:0;
         $res = $stock->save();
 
+        Log::add([
+          'type' => 'Add',
+          'nik' => $r->nik,
+          'description' => 'Menambah Stok : '.$stock->stock_code
+        ]);
+
         return response()->json(Api::response($res,$res?"Sukses":"Gagal",$stock),200);
     }
 
@@ -71,8 +77,6 @@ class StockController extends Controller
         // edit stock
         $old = Stock::where(['stock_code'=>$r->input('stock_code')]);
         if($old->count() > 0){
-            $old->first();
-
             $old->update([
                 'stock_name' => $r->input('stock_name'),
                 'stock_size' => $r->input('stock_size'),
@@ -80,9 +84,13 @@ class StockController extends Controller
                 'stock_type' => $r->input('stock_type'),
                 'stock_color' => $r->input('stock_color'),
                 'measure_code' => $r->input('measure_code'),
-                'stock_min_qty' => $r->input('stock_min_qty'),
-                'stock_max_qty' => $r->input('stock_max_qty'),
+                'stock_min_qty' => !empty($r->input('stock_min_qty'))?$r->input('stock_min_qty'):0,
                 'stock_daily_use' => $r->has('stock_daily_use')?1:0
+            ]);
+            Log::add([
+              'type' => 'Edit',
+              'nik' => $r->nik,
+              'description' => 'Menngubah Stok : '.$r->input('stock_code')
             ]);
         } else
             return response()->json(Api::response(false,"Data stok tidak ada"),200);
@@ -91,7 +99,13 @@ class StockController extends Controller
     }
 
     public function delete(Request $r){
-        $stock = Stock::where('stock_code',$r->input('stock_code'))->delete();
+        Stock::where('stock_code',$r->input('stock_code'))->delete();
+
+        Log::add([
+          'type' => 'Delete',
+          'nik' => $r->nik,
+          'description' => 'Menghapus Stok : '.$r->input('stock_code')
+        ]);
         return response()->json(Api::response(true,"Sukses"),200);
     }
 

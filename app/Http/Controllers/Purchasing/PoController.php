@@ -17,7 +17,7 @@ use App\Model\Document\PoDetailModel AS PODetail;
 
 // Embed a Helper
 use DB;
-use App\Helpers\Api;
+use App\Helpers\{Api, Log};
 use Illuminate\Http\Request;
 
 
@@ -74,6 +74,12 @@ class PoController extends Controller
                 if(!empty($data['date'])){
                   PO::where(['po_code' => $po_code])->update(['status' => 'ST02']);
                 }
+
+                Log::add([
+                  'type' => 'Edit',
+                  'nik' => $r->nik,
+                  'description' => 'Memproses PO nomor : '.$po_code
+                ]);
               }
           }
         }

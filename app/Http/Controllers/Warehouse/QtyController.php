@@ -15,7 +15,7 @@ use App\Model\Document\RequestToolsDetailModel AS ReqToolsDetail;
 
 // Embed a Helper
 use DB;
-use App\Helpers\Api;
+use App\Helpers\{Api, Log};
 use Illuminate\Http\Request;
 
 
@@ -101,9 +101,21 @@ class QtyController extends Controller
                   }
                 }
               }
+              Log::add([
+                'type' => 'Add',
+                'nik' => $r->nik,
+                'description' => 'Menambah Kuantiti Stok : '.$r->stock_code
+              ]);
             }
-          } else
+          } else{
             DB::select(DB::raw("EXEC stock.stock_out @stcode='".$r->stock_code."', @qty='".$qty."',@nik='".$r->nik."', @notes='Stock Opname (".$date.")', @page='".$r->page_code."' "));
+
+            Log::add([
+              'type' => 'Edit',
+              'nik' => $r->nik,
+              'description' => 'Opname Stok : '.$r->stock_code
+            ]);
+          }
         } else {
           $qQty = new Qty;
           $qQty->main_stock_code = $r->main_stock_code;
@@ -154,6 +166,12 @@ class QtyController extends Controller
                 }
               }
             }
+
+            Log::add([
+              'type' => 'Edit',
+              'nik' => $r->nik,
+              'description' => 'Menambah Kuantiti Stok : '.$r->stock_code
+            ]);
           }
         }
         return response()->json(Api::response(true,'Berhasil'),200);
@@ -337,6 +355,7 @@ class QtyController extends Controller
     public function import(Request $r){
         $date = date("Y-m-d H:i:s");
         if($r->has('data')){
+          $lst = [];
           foreach ($r->data as $i => $row) {
             $stk = null;
             if(!empty($row['stock_code']) && !is_null($row['stock_code'])){
@@ -362,10 +381,19 @@ class QtyController extends Controller
                   $qty->stock_date = $date;
                   $qty->stock_notes = "Stock Awal (".$date.")";
                   $qty->save();
+
+                  // append list stock_code
+                  $lst[] = $row['stock_code'];
                 }
               }
             }
           }
+          // add log
+          Log::add([
+            'type' => 'Add',
+            'nik' => $r->nik,
+            'description' => 'Import Kuantiti dari Excel Untuk stock : '.implode(', ', $lst)
+          ]);
         }
         return response()->json(Api::response(true, 'sukses'),200);
     }

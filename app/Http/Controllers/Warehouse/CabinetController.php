@@ -10,7 +10,7 @@ use App\Model\Stock\CabinetModel AS Cabinet;
 
 // Embed a Helper
 use DB;
-use App\Helpers\Api;
+use App\Helpers\{Api, Log};
 use Illuminate\Http\Request;
 
 
@@ -59,6 +59,12 @@ class CabinetController extends Controller
             $cab->main_stock_code = $r->main_stock_code;
             $cab->save();
 
+            Log::add([
+              'type' => 'Add',
+              'nik' => $r->nik,
+              'description' => 'Menambah Stok di Rak : '.Stock::where(['main_stock_code' => $r->main_stock_code])->first()->stock_code
+            ]);
+
             return response()->json(Api::response(true,'Sukses', $cab),200);
         }
 
@@ -66,7 +72,14 @@ class CabinetController extends Controller
     }
 
     public function delete(Request $r){
+        $rak = Cabinet::where(['stock_cabinet_code' => $r->stock_cabinet_code])->first();
         Cabinet::where(['stock_cabinet_code' => $r->stock_cabinet_code])->delete();
+
+        Log::add([
+          'type' => 'Delete',
+          'nik' => $r->nik,
+          'description' => 'Menghapus rak : '.$rak->cabinet_name
+        ]);
 
         return response()->json(Api::response(true,'Sukses'),200);
     }

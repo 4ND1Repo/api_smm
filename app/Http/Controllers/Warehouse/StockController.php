@@ -15,7 +15,7 @@ use App\Model\Document\RequestToolsDetailModel AS ReqToolsDetail;
 
 // Embed a Helper
 use DB;
-use App\Helpers\Api;
+use App\Helpers\{Api, Log};
 use Illuminate\Http\Request;
 
 
@@ -130,13 +130,19 @@ class StockController extends Controller
                 $stk->main_stock_code = $this->_generate_prefix();
                 $stk->nik = $r->nik;
                 $stk->save();
+
+                Log::add([
+                  'type' => 'Add',
+                  'nik' => $r->nik,
+                  'description' => 'Menambah Stok baru : '.$stk->stock_code
+                ]);
             } else
                 return response()->json(Api::response(false,'Stock sudah tersedia'),200);
 
             return response()->json(Api::response(true,'Sukses'),200);
         }
 
-        return response()->json(Api::response(false,'Data sudah dimasukan ke rak'),200);
+        return response()->json(Api::response(false,'Data stok sudah ada'),200);
     }
 
     public function edit(Request $r){
@@ -153,6 +159,11 @@ class StockController extends Controller
                 'stock_min_qty' => (!empty($r->input('stock_min_qty')) && !is_null($r->input('stock_min_qty')))?$r->input('stock_min_qty'):0,
                 'stock_daily_use' => $r->has('stock_daily_use')?1:0
             ]);
+            Log::add([
+              'type' => 'Edit',
+              'nik' => $r->nik,
+              'description' => 'Mengubah stok : '.$r->input('stock_code')
+            ]);
         } else
             return response()->json(Api::response(false,"Data stok tidak ada"),200);
 
@@ -165,6 +176,12 @@ class StockController extends Controller
         $stock_code = Stock::where(['main_stock_code' => $r->main_stock_code])->first()->stock_code;
         Stock::where(['main_stock_code' => $r->main_stock_code])->delete();
         MasterStock::where(['stock_code' => $stock_code])->delete();
+
+        Log::add([
+          'type' => 'Delete',
+          'nik' => $r->nik,
+          'description' => 'Menghapus stok : '.$stock_code
+        ]);
 
         return response()->json(Api::response(true,'Sukses'),200);
     }
@@ -526,6 +543,7 @@ class StockController extends Controller
     public function import(Request $r){
         $date = date("Y-m-d H:i:s");
         if($r->has('data')){
+          $lst = [];
           foreach ($r->data as $i => $row) {
             $stk = null;
             if(empty($row['stock_code']) || is_null($row['stock_code'])){
@@ -618,8 +636,15 @@ class StockController extends Controller
                   $qty->save();
                 }
               }
+              $lst[] = $stk->stock_code;
             }
           }
+
+          Log::add([
+            'type' => 'Add',
+            'nik' => $r->nik,
+            'description' => 'Import Stock dari Excel Untuk stock : '.implode(', ', $lst)
+          ]);
         }
         return response()->json(Api::response(true, 'sukses'),200);
     }

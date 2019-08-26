@@ -10,7 +10,7 @@ use App\Model\Master\MenuModel AS Menu;
 
 // Embed a Helper
 use DB;
-use App\Helpers\Api;
+use App\Helpers\{Api, Log};
 use Illuminate\Http\Request;
 
 
@@ -51,13 +51,25 @@ class MenuController extends Controller
             $menu->id_parent = $r->id_parent;
             $menu->menu_icon = $r->menu_icon;
             $menu->save();
+
+            Log::add([
+              'type' => 'Add',
+              'nik' => $r->nik,
+              'description' => 'Menambah menu : '.$r->menu_name
+            ]);
             return response()->json(Api::response(true,"Success"),200);
         }
         return response()->json(Api::response(false,"Menu are exists"),200);
     }
 
     public function delete(Request $r){
+        $menu = Menu::where(['id_menu' => $r->id])->first();
         Menu::where(['id_menu' => $r->id])->delete();
+        Log::add([
+          'type' => 'Delete',
+          'nik' => $r->nik,
+          'description' => 'Menghapus menu : '.$menu->menu_name
+        ]);
         return response()->json(Api::response(true,"Success"),200);
     }
 

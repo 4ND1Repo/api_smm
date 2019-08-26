@@ -11,7 +11,7 @@ use App\Model\Stock\CabinetModel AS MainCabinet;
 
 // Embed a Helper
 use DB;
-use App\Helpers\Api;
+use App\Helpers\{Api, Log};
 use Illuminate\Http\Request;
 
 
@@ -64,6 +64,12 @@ class CabinetController extends Controller
                     if(!empty($r->parent_cabinet_code))
                         $pCab = Cabinet::where(['cabinet_code' => $r->parent_cabinet_code])->update(['is_child' => 0]);
                 }
+
+                Log::add([
+                  'type' => 'Add',
+                  'nik' => $r->nik,
+                  'description' => 'Menambah rak : '.$cab->cabinet_name
+                ]);
                 return response()->json(Api::response(true,"Sukses"),200);
             }
 
@@ -84,6 +90,12 @@ class CabinetController extends Controller
                 if($cbt->count() == 0)
                     Cabinet::where(['cabinet_code' => $cb['parent_cabinet_code'], 'page_code' => $r->page_code])->update(['is_child' => 1]);
             }
+
+            Log::add([
+              'type' => 'Delete',
+              'nik' => $r->nik,
+              'description' => 'Menghapus rak : '.$cb['cabinet_name']
+            ]);
         }
 
         return response()->json(Api::response(true,"Sukses"),200);

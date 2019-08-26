@@ -10,7 +10,7 @@ use App\Model\Master\MeasureModel AS Measure;
 
 // Embed a Helper
 use DB;
-use App\Helpers\Api;
+use App\Helpers\{Api, Log};
 use Illuminate\Http\Request;
 
 
@@ -58,6 +58,12 @@ class MeasureController extends Controller
             $mea->measure_type = $r->input('measure_type');
             $mea->measure_name = $r->input('measure_name');
             $res = $mea->save();
+
+            Log::add([
+              'type' => 'Add',
+              'nik' => $r->nik,
+              'description' => 'Menambah satuan : '.$r->input('measure_name')
+            ]);
         }
 
         return response()->json(Api::response($res,$res?"Sukses":"Satuan telah ada"),200);
@@ -76,11 +82,22 @@ class MeasureController extends Controller
                 $old->update([
                     'measure_name' => $r->input('measure_name')
                 ]);
+
+                Log::add([
+                  'type' => 'Edit',
+                  'nik' => $r->nik,
+                  'description' => 'Mengubah satuan : '.$r->input('measure_name')
+                ]);
                 return response()->json(Api::response(true,"Sukses, tapi singkatan telah ada sebelumnya"),200);
             } else{
                 $old->update([
                     'measure_type' => $r->input('measure_type'),
                     'measure_name' => $r->input('measure_name')
+                ]);
+                Log::add([
+                  'type' => 'Edit',
+                  'nik' => $r->nik,
+                  'description' => 'Mengubah satuan : '.$r->input('measure_name')
                 ]);
             }
         } else
@@ -90,7 +107,14 @@ class MeasureController extends Controller
     }
 
     public function delete(Request $r){
-        $stock = Measure::where('measure_code',$r->input('measure_code'))->delete();
+        $mea = Measure::where('measure_code',$r->input('measure_code'))->first();
+        Measure::where('measure_code',$r->input('measure_code'))->delete();
+
+        Log::add([
+          'type' => 'Delete',
+          'nik' => $r->nik,
+          'description' => 'Menghapus satuan : '.$mea->measure_name
+        ]);
         return response()->json(Api::response(true,"Sukses"),200);
     }
 
@@ -140,7 +164,8 @@ class MeasureController extends Controller
         $input = $r->input();
         $column_search = [
             'measure_code',
-            'measure_type'
+            'measure_type',
+            'measure_name'
         ];
 
         // generate default

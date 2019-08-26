@@ -10,7 +10,7 @@ use App\Model\Master\IconModel AS Icon;
 
 // Embed a Helper
 use DB;
-use App\Helpers\Api;
+use App\Helpers\{Api, Log};
 use Illuminate\Http\Request;
 
 
@@ -39,13 +39,25 @@ class IconController extends Controller
         $icon->icon_name = $r->icon_name;
         $icon->save();
 
+        Log::add([
+          'type' => 'Add',
+          'nik' => $r->nik,
+          'description' => 'Menambah Ikon : '.$r->icon_name
+        ]);
+
         return response()->json(Api::response(true,"Success"),200);
       }
       return response()->json(Api::response(false,"Icon was added"),200);
     }
 
     public function delete(Request $r){
-      Icon::find($r->id)->delete();
+      $icon = Icon::where('icon_id',$r->id)->first();
+      Icon::where('icon_id',$r->id)->delete();
+      Log::add([
+        'type' => 'Delete',
+        'nik' => $r->nik,
+        'description' => 'Menghapus Ikon : '.$icon->icon_name
+      ]);
 
       return response()->json(Api::response(true,"Success"),200);
     }

@@ -14,7 +14,7 @@ use App\Model\Stock\QtyOutModel AS QtyOut;
 
 // Embed a Helper
 use DB;
-use App\Helpers\Api;
+use App\Helpers\{Api, Log};
 use Illuminate\Http\Request;
 
 
@@ -77,6 +77,11 @@ class BorrowController extends Controller
         $borrow->status = 'ST02';
       }
       if($borrow->save()){
+        Log::add([
+          'type' => 'Add',
+          'nik' => $r->nik,
+          'description' => 'Menambah Pinjaman Barang : '.Stock::where(['main_stock_code' => $r->main_stock_code])->first()->stock_code
+        ]);
         // stock out
         if($borrow->status == 'ST02'){
           $stk = Stock::where(['main_stock_code' => $r->main_stock_code])->first();
@@ -103,10 +108,17 @@ class BorrowController extends Controller
         $data['status'] = 'ST02';
 
       if(Borrow::where(['borrowed_code' => $r->borrowed_code])->update($data)){
+        Log::add([
+          'type' => 'Edit',
+          'nik' => $r->nik,
+          'description' => 'Mengubah Pinjaman Barang : '.Stock::where(['main_stock_code' => $r->main_stock_code])->first()->stock_code
+        ]);
         // stock out
-        if($data['status'] == 'ST02'){
-          $stk = Stock::where(['main_stock_code' => $r->main_stock_code])->first();
-          DB::select(DB::raw("EXEC stock.stock_out @stcode='".$stk->stock_code."', @qty='".$r->borrowed_qty."',@nik='".($r->has('create_by')?$r->create_by:$r->nik)."', @notes='Peminjaman (".$r->borrowed_code.")', @page='".$r->page_code."' "));
+        if(isset($data['status'])){
+          if($data['status'] == 'ST02'){
+            $stk = Stock::where(['main_stock_code' => $r->main_stock_code])->first();
+            DB::select(DB::raw("EXEC stock.stock_out @stcode='".$stk->stock_code."', @qty='".$r->borrowed_qty."',@nik='".($r->has('create_by')?$r->create_by:$r->nik)."', @notes='Peminjaman (".$r->borrowed_code.")', @page='".$r->page_code."' "));
+          }
         }
         return response()->json(Api::response(1,'Sukses'),200);
       }
@@ -115,8 +127,15 @@ class BorrowController extends Controller
     }
 
     public function delete(Request $r){
-      if(Borrow::where(['borrowed_code' => $r->borrowed_code])->delete())
+      $borrow = Borrow::where(['borrowed_code' => $r->borrowed_code])->first();
+      if(Borrow::where(['borrowed_code' => $r->borrowed_code])->delete()){
+        Log::add([
+          'type' => 'Delete',
+          'nik' => $r->nik,
+          'description' => 'Menghapus Pinjaman Barang : '.Stock::where(['main_stock_code' => $borrow->main_stock_code])->first()->stock_code
+        ]);
         return response()->json(Api::response(1,'Sukses'),200);
+      }
 
       return response()->json(Api::response(0,'Gagal simpan'),200);
     }
@@ -229,6 +248,11 @@ class BorrowController extends Controller
       $query_out = DB::select(DB::raw("SELECT SUM(qty) AS qty FROM stock.qty_out WHERE main_stock_code='".$r->main_stock_code."' AND stock_notes = 'Peminjaman (".$r->borrowed_code.")'"));
 
       if($query_in[0]->qty == $query_out[0]->qty){
+        Log::add([
+          'type' => 'Add',
+          'nik' => $r->nik,
+          'description' => 'Pengembalian Pinjaman Barang : '.Stock::where(['main_stock_code' => $r->main_stock_code])->first()->stock_code
+        ]);
         Borrow::where(['borrowed_code' => $r->borrowed_code])->update(['status' => 'ST05']);
       }
 

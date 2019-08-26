@@ -15,7 +15,7 @@ use App\Model\Account\UserBiodataModel AS UserBiodata;
 // Embed a Helper
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use App\Helpers\Api;
+use App\Helpers\{Api, Log};
 
 class AuthController extends Controller
 {
@@ -42,6 +42,11 @@ class AuthController extends Controller
                     $q = UserGroup::where(['group_code' => $user->group_code])->first();
                     $bio = UserBiodata::where(['nik' => $user->nik]);
                     $stat = ($bio->count() > 0)? $bio->first(): false;
+                    Log::add([
+                      'type' => 'Login',
+                      'nik' => $user->nik,
+                      'description' => 'Masuk Sistem'
+                    ]);
                     return response()->json(Api::response(1,'Sukses', ['nik' => $user->nik, 'name' => ($stat?($stat->first_name." ".$stat->last_name):$user->nik), 'photo' => $user->photo, 'company' => $q->company_code, 'department' => $q->department_code, 'division' => $q->division_code, 'page' => $q->page_code, 'group' => $q->group_code]),200);
                 }
                 return response()->json(Api::response(0,'Kata sandi salah'), 200);

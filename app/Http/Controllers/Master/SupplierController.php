@@ -10,7 +10,7 @@ use App\Model\Master\SupplierModel AS Supplier;
 
 // Embed a Helper
 use DB;
-use App\Helpers\Api;
+use App\Helpers\{Api, Log};
 use Illuminate\Http\Request;
 
 
@@ -58,6 +58,12 @@ class SupplierController extends Controller
         $sup->status_code = "ST01";
         $res = $sup->save();
 
+        Log::add([
+          'type' => 'Add',
+          'nik' => $r->nik,
+          'description' => 'Menambah Supplier : '.$r->input('supplier_name')
+        ]);
+
         return response()->json(Api::response($res,$res?"Sukses":"Gagal",$sup),200);
     }
 
@@ -72,11 +78,22 @@ class SupplierController extends Controller
                 'city_code' => $r->input('city_code')
             ]);
 
+        Log::add([
+          'type' => 'Edit',
+          'nik' => $r->nik,
+          'description' => 'Mengubah Supplier : '.$r->input('supplier_code')
+        ]);
+
         return response()->json(Api::response(true,"Sukses"),200);
     }
 
     public function delete(Request $r){
         $sup = Supplier::where('supplier_code',$r->input('supplier_code'))->delete();
+        Log::add([
+          'type' => 'Delete',
+          'nik' => $r->nik,
+          'description' => 'Menghapus Supplier : '.$r->input('supplier_code')
+        ]);
         return response()->json(Api::response(true,"Sukses"),200);
     }
 

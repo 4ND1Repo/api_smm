@@ -14,7 +14,7 @@ use App\Model\Master\MenuModel AS Menu;
 use DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use App\Helpers\Api;
+use App\Helpers\{Api, Log};
 
 class UserGroupController extends Controller
 {
@@ -60,7 +60,13 @@ class UserGroupController extends Controller
 
     public function delete(Request $r){
         UserMenu::where('group_code',$r->id)->delete();
+        $grp = UserGroup::where('group_code',$r->id)->first();
         UserGroup::where('group_code',$r->id)->delete();
+        Log::add([
+          'type' => 'Delete',
+          'nik' => $r->nik,
+          'description' => 'Menghapus Group : '.$grp->group_name
+        ]);
         return response()->json(Api::response(true,"Sukses"),200);
     }
 
@@ -74,6 +80,12 @@ class UserGroupController extends Controller
         $grp->division_code = $r->division_code;
         $grp->save();
 
+        Log::add([
+          'type' => 'Add',
+          'nik' => $r->nik,
+          'description' => 'Menambah Group : '.$r->group_name
+        ]);
+
         return response()->json(Api::response(1,'Sukses'), 200);
     }
 
@@ -84,6 +96,12 @@ class UserGroupController extends Controller
           'company_code' => $r->company_code,
           'department_code' => $r->department_code,
           'division_code' => $r->division_code
+        ]);
+
+        Log::add([
+          'type' => 'Edit',
+          'nik' => $r->nik,
+          'description' => 'Mengubah Group : '.$r->group_name
         ]);
 
         return response()->json(Api::response(1,'Sukses'), 200);
@@ -199,6 +217,12 @@ class UserGroupController extends Controller
           $role->save();
         }
 
+
+        Log::add([
+          'type' => 'Edit',
+          'nik' => $r->nik,
+          'description' => 'Mengubah Role : '.$input['group_code']
+        ]);
         return response()->json(Api::response(1,'Saved'),200);
     }
 

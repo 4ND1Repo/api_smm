@@ -14,7 +14,7 @@ use App\Model\Account\UserGroupModel AS UserGroup;
 use DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use App\Helpers\Api;
+use App\Helpers\{Api, Log};
 
 class UserController extends Controller
 {
@@ -94,6 +94,12 @@ class UserController extends Controller
       $user->group_code = $r->group_code;
       $user->status_code = "ST01";
       $user->save();
+
+      Log::add([
+        'type' => 'Add',
+        'nik' => $r->nik,
+        'description' => 'Menambah User : '.$user->nik
+      ]);
       return response()->json(Api::response(1,'Sukses'), 200);
     }
 
@@ -108,6 +114,11 @@ class UserController extends Controller
         }
       }
       User::where(['nik' => $r->username])->update($data);
+      Log::add([
+        'type' => 'Edit',
+        'nik' => $r->nik,
+        'description' => 'Mengubah User : '.$r->username
+      ]);
       return response()->json(Api::response(1,'Sukses'), 200);
     }
 
@@ -123,6 +134,11 @@ class UserController extends Controller
       }
 
       UserBiodata::where(['nik' => $nik])->update($data);
+      Log::add([
+        'type' => 'Edit',
+        'nik' => $nik,
+        'description' => 'Mengubah Profil'
+      ]);
       return response()->json(Api::response(1,'Sukses'), 200);
     }
 
@@ -132,7 +148,11 @@ class UserController extends Controller
         // check history transaction
 
 
-
+        Log::add([
+          'type' => 'Delete',
+          'nik' => $r->nik,
+          'description' => 'Menghapus user : '.$r->id
+        ]);
         return response()->json(Api::response(1,'Sukses'), 200);
     }
 
@@ -228,6 +248,12 @@ class UserController extends Controller
     public function photo(Request $r){
         $return = [];
         User::where(['nik' => $r->nik])->update(['photo' => $r->photo]);
+
+        Log::add([
+          'type' => 'Edit',
+          'nik' => $r->nik,
+          'description' => 'Mengubah Foto Profil'
+        ]);
         return response()->json(Api::response(true, "berhasil update photo",[]),200);
     }
 
@@ -237,6 +263,11 @@ class UserController extends Controller
         $user = $user->first();
         if(Hash::check($r->old_password, $user->pwd_hash)){
           User::where(['nik' => $r->nik])->update(['pwd_hash' => Hash::make($r->new_password)]);
+          Log::add([
+            'type' => 'Edit',
+            'nik' => $r->nik,
+            'description' => 'Mengubah Kata Sandi'
+          ]);
           return response()->json(Api::response(true, 'Sukses merubah kata sandi'),200);
         }
         return response()->json(Api::response(false, 'Kata sandi lama tidak sesuai'),200);
@@ -254,7 +285,7 @@ class UserController extends Controller
 
         $return = $q->first();
 
-        return response()->json(Api::response(true, "berhasil update photo",$return),200);
+        return response()->json(Api::response(true, "Berhasil Mengambil Data",$return),200);
     }
 
 }

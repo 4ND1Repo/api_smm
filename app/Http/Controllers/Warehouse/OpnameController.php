@@ -14,7 +14,7 @@ use App\Model\Stock\QtyModel AS Qty;
 
 // Embed a Helper
 use DB;
-use App\Helpers\Api;
+use App\Helpers\{Api, Log};
 use Illuminate\Http\Request;
 
 
@@ -71,6 +71,11 @@ class OpnameController extends Controller
             $op->opname_notes = $r->opname_notes;
             $op->save();
 
+            Log::add([
+              'type' => 'Add',
+              'nik' => $r->nik,
+              'description' => 'Menambah stok opname : '.Stock::where(['main_stock_code' => $op->main_stock_code])->first()->stock_code
+            ]);
             return response()->json(Api::response(true, 'sukses'),200);
         }
 
@@ -80,6 +85,12 @@ class OpnameController extends Controller
     public function delete(Request $r){
         list($main_stock_code,$opname_date_from) = explode('|', urldecode($r->opname));
         Opname::where(['main_stock_code' => $main_stock_code, 'opname_date_from' => $opname_date_from, 'approve_by' => NULL, 'reject_by' => NULL])->delete();
+
+        Log::add([
+          'type' => 'Delete',
+          'nik' => $r->nik,
+          'description' => 'Menghapus stok opname : '.Stock::where(['main_stock_code' => $main_stock_code])->first()->stock_code
+        ]);
 
         return response()->json(Api::response(true, 'sukses'),200);
     }
@@ -101,6 +112,11 @@ class OpnameController extends Controller
             ])->update([
               'approve_by' => $r->nik,
               'approve_date' => $date
+            ]);
+            Log::add([
+              'type' => 'Approve',
+              'nik' => $r->nik,
+              'description' => 'Menyetujui stok opname : '.Stock::where(['main_stock_code' => $main_stock_code])->first()->stock_code."(".$opname_date_from.")"
             ]);
         } else {
           $qQty = new Qty;
@@ -160,6 +176,12 @@ class OpnameController extends Controller
                 }
               }
             }
+
+            Log::add([
+              'type' => 'Approve',
+              'nik' => $r->nik,
+              'description' => 'Menyetujui stok opname : '.Stock::where(['main_stock_code' => $main_stock_code])->first()->stock_code."(".$opname_date_from.")"
+            ]);
           }
         }
 
@@ -174,6 +196,12 @@ class OpnameController extends Controller
           ])->update([
             'reject_by' => $r->nik,
             'reject_date' => date("Y-m-d H:i:s")
+          ]);
+
+          Log::add([
+            'type' => 'Reject',
+            'nik' => $r->nik,
+            'description' => 'Tidak menyetujui stok opname : '.Stock::where(['main_stock_code' => $main_stock_code])->first()->stock_code."(".$opname_date_from.")"
           ]);
 
         return response()->json(Api::response(true, 'sukses'),200);

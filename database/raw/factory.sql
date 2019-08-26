@@ -147,6 +147,11 @@ CREATE TABLE [master].[master_icon](
 	[icon_name] [varchar](50) NOT NULL
 ) ON [PRIMARY]
 GO
+CREATE TABLE [master].[master_activity](
+	[activity_code] [varchar](10) NOT NULL,
+	[activity_type] [varchar](50) NOT NULL
+) ON [PRIMARY]
+GO
 CREATE TABLE [master].[master_measure](
 	[measure_code] [varchar](10) NOT NULL,
 	[measure_type] [varchar](50) NOT NULL,
@@ -350,6 +355,15 @@ CREATE TABLE [account].[user_identity](
 ) ON [PRIMARY]
 GO
 
+CREATE TABLE [account].[history](
+	[history_id] [bigint] NOT NULL IDENTITY(1,1),
+	[nik] [varchar](10) NOT NULL,
+	[activity_code] [varchar](10) NOT NULL,
+	[history_description] [text] NULL,
+	[history_date] [datetime] NOT NULL DEFAULT(GETDATE()),
+) ON [PRIMARY]
+GO
+
 -- store procedure
 CREATE PROCEDURE [stock].[stock_out]
 	@stcode VARCHAR(20),
@@ -445,6 +459,15 @@ INSERT INTO [master].[master_measure] VALUES
 ('MEA001', 'Kg', 'Kilogram'),
 ('MEA002', 'ltr', 'Liter'),
 ('MEA003', 'M', 'Meter')
+GO
+INSERT INTO [master].[master_activity] VALUES
+('ACT01', 'Add'),
+('ACT02', 'Edit'),
+('ACT03', 'Delete'),
+('ACT04', 'Approve'),
+('ACT05', 'Reject'),
+('ACT06', 'Login'),
+('ACT07', 'Logout')
 GO
 INSERT INTO [master].[master_city](city_code,city_name,status_code) VALUES
 ('BDG','Bandung','ST01'),

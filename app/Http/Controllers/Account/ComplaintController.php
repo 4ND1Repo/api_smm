@@ -11,7 +11,7 @@ use App\Model\Document\ComplaintModel AS Complaint;
 // Embed a Helper
 use DB;
 use Illuminate\Http\Request;
-use App\Helpers\Api;
+use App\Helpers\{Api, Log};
 
 class ComplaintController extends Controller
 {
@@ -34,6 +34,12 @@ class ComplaintController extends Controller
         $query->complaint_anonymous = $r->complaint_anonymous;
       $query->create_by = $r->nik;
       $query->save();
+
+      Log::add([
+        'type' => 'Add',
+        'nik' => $r->nik,
+        'description' => 'Menambah Complaint'
+      ]);
       return response()->json(Api::response(true, 'Sukses'),200);
     }
 
