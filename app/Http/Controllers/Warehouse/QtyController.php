@@ -332,4 +332,41 @@ class QtyController extends Controller
         return response()->json($data,200);
     }
 
+
+    // for import data stock from excel
+    public function import(Request $r){
+        $date = date("Y-m-d H:i:s");
+        if($r->has('data')){
+          foreach ($r->data as $i => $row) {
+            $stk = null;
+            if(!empty($row['stock_code']) && !is_null($row['stock_code'])){
+              $query = Stock::where(['stock_code' => $row['stock_code'], 'page_code' => $r->page_code]);
+              if($query->count() > 0){
+                $main = $query->first();
+                if(!empty($row['qty']) && !is_null($row['qty']) && ((float)$row['qty'] != 0)){
+                  $query = Qty::where(['main_stock_code' => $main->main_stock_code]);
+                  if($query->count() > 0){
+                    $query->delete();
+                  }
+                  $query = QtyOut::where(['main_stock_code' => $main->main_stock_code]);
+                  if($query->count() > 0){
+                    $query->delete();
+                  }
+
+                  $qty = new Qty;
+                  $qty->main_stock_code = $main->main_stock_code;
+                  $qty->supplier_code = NULL;
+                  $qty->stock_price = 0;
+                  $qty->qty = (float) $row['qty'];
+                  $qty->nik = $r->nik;
+                  $qty->stock_date = $date;
+                  $qty->stock_notes = "Stock Awal (".$date.")";
+                  $qty->save();
+                }
+              }
+            }
+          }
+        }
+        return response()->json(Api::response(true, 'sukses'),200);
+    }
 }

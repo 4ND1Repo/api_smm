@@ -519,4 +519,98 @@ class StockController extends Controller
         return response()->json(Api::response(true,'Sukses',!is_null($query)?$query->stock_qty:0),200);
     }
 
+
+
+
+    // for import data stock from excel
+    public function import(Request $r){
+        $date = date("Y-m-d H:i:s");
+        if($r->has('data')){
+          foreach ($r->data as $i => $row) {
+            $stk = null;
+            if(empty($row['stock_code']) || is_null($row['stock_code'])){
+              if(!empty($row['category_code']) && !is_null($row['category_code'])){
+                // validation by stock_type, stock_size, stock_brand, stock_color
+                $query = MasterStock::where([
+                  'stock_type' => $row['stock_type'],
+                  'stock_size' => $row['stock_size'],
+                  'stock_brand' => $row['stock_brand'],
+                  'stock_color' => $row['stock_color']
+                ]);
+
+                if($query->count() == 0){
+                  $stk = new MasterStock;
+                  $stk->stock_code = $this->_generate_master_prefix($row['category_code']);
+                  $stk->stock_type = $row['stock_type'];
+                  $stk->stock_size = $row['stock_size'];
+                  $stk->stock_brand = $row['stock_brand'];
+                  $stk->stock_color = $row['stock_color'];
+                  $stk->stock_daily_use = $row['stock_daily_use'];
+                  $stk->measure_code = $row['measure_code'];
+                  $stk->stock_min_qty = $row['stock_min_qty'];
+                  $stk->save();
+                } else
+                  $stk = $query->first();
+              }
+            } else {
+              $query = MasterStock::where(['stock_code' => $row['stock_code']]);
+              if($query->count() > 0){
+                // process update it or no
+                $stk = $query->first();
+              }
+            }
+
+            // get main
+            if(!is_null($stk)){
+              // check stock already exists or no
+              $query = Stock::where(['stock_code' => $stk->stock_code, 'page_code' => $r->page_code]);
+              if($query->count() == 0){
+                return $stk;
+                $main = new Stock;
+                $main->main_stock_code = $this->_generate_prefix();
+                $main->stock_code = $stk->stock_code;
+                $main->page_code = $r->page_code;
+                $main->nik = $r->nik;
+                if($main->save()){
+                  if(!empty($row['qty']) && !is_null($row['qty']) && ((float)$row['qty'] != 0)){
+                    $qty = new Qty;
+                    $qty->main_stock_code = $main->main_stock_code;
+                    $qty->supplier_code = NULL;
+                    $qty->stock_price = 0;
+                    $qty->qty = (float) $row['qty'];
+                    $qty->nik = $r->nik;
+                    $qty->stock_date = $date;
+                    $qty->stock_notes = "Stock Awal (".$date.")";
+                    $qty->save();
+                  }
+                }
+              } else {
+                $main = $query->first();
+                if(!empty($row['qty']) && !is_null($row['qty']) && ((float)$row['qty'] != 0)){
+                  $query = Qty::where(['main_stock_code' => $main->main_stock_code]);
+                  if($query->count() > 0){
+                    $query->delete();
+                  }
+                  $query = QtyOut::where(['main_stock_code' => $main->main_stock_code]);
+                  if($query->count() > 0){
+                    $query->delete();
+                  }
+
+                  $qty = new Qty;
+                  $qty->main_stock_code = $main->main_stock_code;
+                  $qty->supplier_code = NULL;
+                  $qty->stock_price = 0;
+                  $qty->qty = (float) $row['qty'];
+                  $qty->nik = $r->nik;
+                  $qty->stock_date = $date;
+                  $qty->stock_notes = "Stock Awal (".$date.")";
+                  $qty->save();
+                }
+              }
+            }
+          }
+        }
+        return response()->json(Api::response(true, 'sukses'),200);
+    }
+
 }

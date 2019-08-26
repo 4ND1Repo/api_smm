@@ -341,6 +341,13 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
                 });
             });
         });
+
+
+        // for import group
+        $router->group(['prefix' => 'import'], function() use($router){
+            $router->post('stock', 'Warehouse\StockController@import');
+            $router->post('qty', 'Warehouse\QtyController@import');
+        });
     });
 
 
