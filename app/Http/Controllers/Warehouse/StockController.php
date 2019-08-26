@@ -556,6 +556,17 @@ class StockController extends Controller
               $query = MasterStock::where(['stock_code' => $row['stock_code']]);
               if($query->count() > 0){
                 // process update it or no
+                $query->update([
+                  'stock_type' => $row['stock_type'],
+                  'stock_size' => $row['stock_size'],
+                  'stock_brand' => $row['stock_brand'],
+                  'stock_color' => $row['stock_color'],
+                  'stock_daily_use' => $row['stock_daily_use'],
+                  'measure_code' => $row['measure_code'],
+                  'stock_min_qty' => $row['stock_min_qty']
+                ]);
+
+                $query = MasterStock::where(['stock_code' => $row['stock_code']]);
                 $stk = $query->first();
               }
             }
