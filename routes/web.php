@@ -97,7 +97,7 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
             $router->get('type','Master\StockController@type');
             $router->get('size','Master\StockController@size');
             $router->get('color','Master\StockController@color');
-            
+
             $router->get('find/{id}', 'Master\StockController@find');
             $router->post('autocomplete', 'Master\StockController@autocomplete');
             $router->post('get','Master\StockController@get');
@@ -350,6 +350,12 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
                     $router->post('in', 'Warehouse\QtyController@grid_in');
                     $router->post('out', 'Warehouse\QtyController@grid_out');
                 });
+            });
+
+            // for pricing stock
+            $router->group(['prefix' => 'pricing'], function() use($router){
+                $router->post('get', 'Warehouse\PricingController@get');
+                $router->post('grid', 'Warehouse\PricingController@grid');
             });
         });
 
