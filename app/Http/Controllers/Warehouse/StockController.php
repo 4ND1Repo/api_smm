@@ -243,8 +243,8 @@ class StockController extends Controller
         if(isset($input['query'])){
             if(!is_null($input['query']) and !empty($input['query'])){
                 foreach($input['query'] as $field => $val){
-                    if(in_array($field, array('measure_code','stock_brand','stock_daily_use')) && (!empty($val) && !is_null($val)))
-                        $sup->where("master.master_stock.".$field,($val=="null"?NULL:$val));
+                    if(in_array($field, array('measure_code','stock_brand','stock_size','stock_type','stock_color','stock_daily_use')) && (!empty($val) && !is_null($val)))
+                        $sup->where("master.master_stock.".$field,($val=="null"?NULL:urldecode($val)));
                     else if($field == 'find'){
                         if(!empty($val)){
                             $sup->where(function($sup) use($column_search,$val){
@@ -302,8 +302,8 @@ class StockController extends Controller
         if(isset($input['query'])){
             if(!is_null($input['query']) and !empty($input['query'])){
                 foreach($input['query'] as $field => $val){
-                    if(in_array($field, array('measure_code','stock_brand','stock_daily_use')))
-                        $sup->where("master.master_stock.".$field,($val=="null"?NULL:$val));
+                    if(in_array($field, array('measure_code','stock_brand','stock_type','stock_size','stock_color','stock_daily_use')))
+                        $sup->where("master.master_stock.".$field,($val=="null"?NULL:urldecode($val)));
                     else if($field == 'find'){
                         if(!empty($val)){
                             $sup->where(function($sup) use($column_search,$val){
@@ -398,8 +398,8 @@ class StockController extends Controller
         if(isset($input['query'])){
             if(!is_null($input['query']) and !empty($input['query'])){
                 foreach($input['query'] as $field => $val){
-                    if(in_array($field, array('measure_code','stock_brand','stock_daily_use')))
-                        $sup->where("master.master_stock.".$field,($val=="null"?NULL:$val));
+                    if(in_array($field, array('measure_code','stock_brand','stock_size','stock_type','stock_color','stock_daily_use')))
+                        $sup->where("master.master_stock.".$field,($val=="null"?NULL:urldecode($val)));
                     else if($field == 'find'){
                         if(!empty($val)){
                             $sup->where(function($sup) use($column_search,$val){
@@ -481,8 +481,8 @@ class StockController extends Controller
         if(isset($input['query'])){
             if(!is_null($input['query']) and !empty($input['query'])){
                 foreach($input['query'] as $field => $val){
-                    if(in_array($field, array('measure_code','stock_brand','stock_daily_use')))
-                        $sup->where("master.master_stock.".$field,($val=="null"?NULL:$val));
+                    if(in_array($field, array('measure_code','stock_brand','stock_size','stock_type','stock_color','stock_daily_use')))
+                        $sup->where("master.master_stock.".$field,($val=="null"?NULL:urldecode($val)));
                     else if($field == 'find'){
                         if(!empty($val)){
                             $sup->where(function($sup) use($column_search,$val){

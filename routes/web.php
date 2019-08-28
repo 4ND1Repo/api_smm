@@ -92,7 +92,12 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
         // master Stock group
         $router->group(['prefix'=>'stock'], function() use($router){
             $router->get('/','Master\StockController@index');
+            // for filter
             $router->get('brand','Master\StockController@brand');
+            $router->get('type','Master\StockController@type');
+            $router->get('size','Master\StockController@size');
+            $router->get('color','Master\StockController@color');
+            
             $router->get('find/{id}', 'Master\StockController@find');
             $router->post('autocomplete', 'Master\StockController@autocomplete');
             $router->post('get','Master\StockController@get');

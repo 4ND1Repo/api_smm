@@ -239,8 +239,8 @@ class OpnameController extends Controller
         if(isset($input['query'])){
             if(!is_null($input['query']) and !empty($input['query'])){
                 foreach($input['query'] as $field => $val){
-                    if(in_array($field, array('stock_brand')) && (!empty($val) && !is_null($val)))
-                        $sup->where("master.master_stock.".$field,($val=="null"?NULL:$val));
+                    if(in_array($field, array('stock_brand','stock_size','stock_type','stock_color','stock_daily_use')) && (!empty($val) && !is_null($val)))
+                        $sup->where("master.master_stock.".$field,($val=="null"?NULL:urldecode($val)));
                     else if(in_array($field, array('approve'))){
                       if(!empty($val) && !is_null($val)){
                         if($val==1)
@@ -305,8 +305,8 @@ class OpnameController extends Controller
         if(isset($input['query'])){
             if(!is_null($input['query']) and !empty($input['query'])){
                 foreach($input['query'] as $field => $val){
-                    if(in_array($field, array('stock_brand')))
-                        $sup->where("master.master_stock.".$field,($val=="null"?NULL:$val));
+                    if(in_array($field, array('stock_brand','stock_size','stock_type','stock_color','stock_daily_use')))
+                        $sup->where("master.master_stock.".$field,($val=="null"?NULL:urldecode($val)));
                     else if(in_array($field, array('approve'))){
                         if($val==1)
                             $sup->whereRaw("stock.opname.approve_by IS NOT NULL");
