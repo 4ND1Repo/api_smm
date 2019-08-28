@@ -552,6 +552,7 @@ INSERT INTO [account].[user_menu](group_code, id_menu, "add", "edit", "del") VAL
 ('USGP003', 11, 1, 1, 1),
 ('USGP004', 1, 1, 1, 1),
 ('USGP004', 2, 1, 1, 1),
+('USGP004', 5, 1, 1, 1),
 ('USGP004', 6, 1, 1, 1),
 ('USGP004', 7, 1, 1, 1),
 ('USGP004', 9, 1, 1, 1),

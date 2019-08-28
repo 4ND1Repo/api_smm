@@ -240,6 +240,11 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
                   $router->post('grid', 'Purchasing\PoController@history_grid');
                 });
             });
+            // Delivery Order group
+            $router->group(['prefix' => 'do'], function() use($router){
+                $router->post('grid', 'Purchasing\DoController@grid');
+                $router->post('get', 'Purchasing\DoController@get');
+            });
         });
     });
 
