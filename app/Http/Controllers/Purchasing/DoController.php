@@ -41,7 +41,8 @@ class DoController extends Controller
             'master.master_stock.stock_size',
             'master.master_stock.stock_brand',
             'master.master_stock.stock_type',
-            'master.master_stock.stock_color'
+            'master.master_stock.stock_color',
+            'master.master_supplier.supplier_name'
         ];
 
         // generate default
@@ -52,9 +53,14 @@ class DoController extends Controller
             );
 
         // whole query
-        $query = Delivery::selectRaw('document.delivery_order.*, master.master_stock.*')
+        $query = Delivery::selectRaw('document.delivery_order.*, master.master_stock.*, master.master_supplier.supplier_name')
             ->join('stock.stock', 'stock.stock.main_stock_code', '=', 'document.delivery_order.main_stock_code')
-            ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code');
+            ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code')
+            ->join('document.purchase_order_detail', function($query){
+              $query->on('document.purchase_order_detail.main_stock_code','=','document.delivery_order.main_stock_code');
+              $query->on('document.purchase_order_detail.po_code','=','document.delivery_order.po_code');
+            })
+            ->join('master.master_supplier', 'document.purchase_order_detail.supplier_code', '=', 'master.master_supplier.supplier_code');
         if(isset($input['query']['start_date']))
           $query->where('document.delivery_order.create_date', '>=', $input['query']['start_date']." 00:00:00");
         if(isset($input['query']['end_date']))
@@ -69,8 +75,9 @@ class DoController extends Controller
                     else if($field == 'find'){
                         if(!empty($val)){
                             $query->where(function($query) use($column_search,$val){
-                                foreach($column_search as $row)
-                                    $query->orWhere($row,'like',"%".$val."%");
+                                foreach($column_search as $row){
+                                    $query->orWhere($row,'like',(in_array($row,['master.master_stock.stock_name'])?"":"%").$val."%");
+                                }
                             });
                         }
                     }
@@ -107,9 +114,14 @@ class DoController extends Controller
             );
 
         // whole query
-        $query = Delivery::selectRaw('document.delivery_order.*, master.master_stock.*')
+        $query = Delivery::selectRaw('document.delivery_order.*, master.master_stock.*, master.master_supplier.supplier_name')
             ->join('stock.stock', 'stock.stock.main_stock_code', '=', 'document.delivery_order.main_stock_code')
-            ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code');
+            ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code')
+            ->join('document.purchase_order_detail', function($query){
+              $query->on('document.purchase_order_detail.main_stock_code','=','document.delivery_order.main_stock_code');
+              $query->on('document.purchase_order_detail.po_code','=','document.delivery_order.po_code');
+            })
+            ->join('master.master_supplier', 'document.purchase_order_detail.supplier_code', '=', 'master.master_supplier.supplier_code');
         if(isset($input['query']['start_date']))
           $query->where('document.delivery_order.create_date', '>=', $input['query']['start_date']." 00:00:00");
         if(isset($input['query']['end_date']))
@@ -125,7 +137,7 @@ class DoController extends Controller
                         if(!empty($val)){
                             $query->where(function($query) use($column_search,$val){
                                 foreach($column_search as $row)
-                                    $query->orWhere($row,'like',"%".$val."%");
+                                    $query->orWhere($row,'like',(in_array($row,['master.master_stock.stock_name'])?"":"%").$val."%");
                             });
                         }
                     }

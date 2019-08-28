@@ -232,7 +232,7 @@ class QtyController extends Controller
                         if(!empty($val)){
                             $sup->where(function($sup) use($column_search,$val){
                                 foreach($column_search as $row)
-                                    $sup->orWhere($row,'like',"%".$val."%");
+                                    $sup->orWhere($row,'like',(in_array($row,['master.master_stock.stock_name'])?"":"%").$val."%");
                             });
                         }
                     }
@@ -314,7 +314,7 @@ class QtyController extends Controller
                         if(!empty($val)){
                             $sup->where(function($sup) use($column_search,$val){
                                 foreach($column_search as $row)
-                                    $sup->orWhere($row,'like',"%".$val."%");
+                                    $sup->orWhere($row,'like',(in_array($row,['master.master_stock.stock_name'])?"":"%").$val."%");
                             });
                         }
                     }

@@ -66,7 +66,7 @@ class PricingController extends Controller
                         if(!empty($val)){
                             $sup->where(function($sup) use($column_search,$val){
                                 foreach($column_search as $row)
-                                    $sup->orWhere($row,'like',"%".$val."%");
+                                    $sup->orWhere($row,'like',(in_array($row,['stock_name'])?"":"%").$val."%");
                             });
                         }
                     }
@@ -117,7 +117,7 @@ class PricingController extends Controller
                         if(!empty($val)){
                             $sup->where(function($sup) use($column_search,$val){
                                 foreach($column_search as $row)
-                                    $sup->orWhere($row,'like',"%".$val."%");
+                                    $sup->orWhere($row,'like',(in_array($row,['stock_name'])?"":"%").$val."%");
                             });
                         }
                     }
