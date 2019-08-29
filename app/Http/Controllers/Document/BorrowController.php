@@ -301,7 +301,7 @@ class BorrowController extends Controller
                         if(!empty($val)){
                             $query->where(function($query) use($column_search,$val){
                                 foreach($column_search as $row)
-                                    $query->orWhere($row,'like',(in_array($row,['stock_name'])?"":"%").$val."%");
+                                    $query->orWhere($row,'like',(in_array($row,['stock_name','stock_brand','stock_size'])?"":"%").$val."%");
                             });
                         }
                     }

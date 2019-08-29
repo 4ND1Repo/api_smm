@@ -249,7 +249,7 @@ class StockController extends Controller
                         if(!empty($val)){
                             $sup->where(function($sup) use($column_search,$val){
                                 foreach($column_search as $row)
-                                    $sup->orWhere($row,'like',(in_array($row,['stock_name'])?"":"%").$val."%");
+                                    $sup->orWhere($row,'like',(in_array($row,['stock_name','stock_brand','stock_size'])?"":"%").$val."%");
                             });
                         }
                     }
@@ -308,7 +308,7 @@ class StockController extends Controller
                         if(!empty($val)){
                             $sup->where(function($sup) use($column_search,$val){
                                 foreach($column_search as $row)
-                                    $sup->orWhere($row,'like',(in_array($row,['stock_name'])?"":"%").$val."%");
+                                    $sup->orWhere($row,'like',(in_array($row,['stock_name','stock_brand','stock_size'])?"":"%").$val."%");
                             });
                         }
                     }
