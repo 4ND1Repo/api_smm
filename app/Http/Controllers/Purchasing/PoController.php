@@ -13,6 +13,7 @@ use App\Model\Stock\QtyOutModel AS QtyOut;
 use App\Model\Document\RequestToolsModel AS ReqTools;
 use App\Model\Document\RequestToolsDetailModel AS ReqToolsDetail;
 use App\Model\Document\PoModel AS PO;
+use App\Model\Document\DoModel AS Delivery;
 use App\Model\Document\PoDetailModel AS PODetail;
 
 // Embed a Helper
@@ -38,7 +39,10 @@ class PoController extends Controller
     }
 
     public function process(Request $r){
+        $date = date('Y-m-d H:i:s');
         foreach ($r->data as $po_code => $row) {
+          $finish = 0;
+          $cnt = count($row);
           foreach ($row as $main_stock_code => $data) {
               $update = [];
               $qty = PODetail::where([
@@ -74,14 +78,23 @@ class PoController extends Controller
                 if(!empty($data['date'])){
                   PO::where(['po_code' => $po_code])->update(['status' => 'ST02']);
                 }
-
-                Log::add([
-                  'type' => 'Edit',
-                  'nik' => $r->nik,
-                  'description' => 'Memproses PO nomor : '.$po_code
-                ]);
+                $q = Delivery::selectRaw("SUM(do_qty) as qty")->where(['main_stock_code' => $main_stock_code, 'po_code' => $po_code])->groupBy('main_stock_code');
+                if($q->count() > 0){
+                  $tmp = $q->first();
+                  if($data['qty'] <= $tmp->qty)
+                    $finish++;
+                }
               }
           }
+          if($finish == $cnt){
+            PO::where(['po_code' => $po_code])->update(['status' => 'ST05', 'finish_by' => $r->nik, 'finish_date' => $date]);
+          }
+          // log when edit
+          Log::add([
+            'type' => 'Edit',
+            'nik' => $r->nik,
+            'description' => 'Memproses PO nomor : '.$po_code
+          ]);
         }
         $return = [
           "po_code" => $po_code,
@@ -213,7 +226,7 @@ class PoController extends Controller
         ->join('master.master_status', 'master.master_status.status_code', '=', 'document.purchase_order.status')
         ->join('master.master_page', 'master.master_page.page_code', '=', 'document.purchase_order.page_code')
         ->where(['document.purchase_order.page_code_destination' => $input['page_code']])
-        ->whereIn('document.purchase_order.status', ['ST02','ST05','ST06']);
+        ->whereIn('document.purchase_order.status', ['ST02']);
 
         // where condition
         if(isset($input['query'])){
