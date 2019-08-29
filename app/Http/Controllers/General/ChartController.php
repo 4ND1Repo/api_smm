@@ -18,7 +18,7 @@ use App\Model\Document\RequestToolsDetailModel AS ReqToolsDetail;
 
 // Embed a Helper
 use DB;
-use App\Helpers\Api;
+use App\Helpers\{Api, Motivation};
 use Illuminate\Http\Request;
 use DateTime;
 use DateInterval;
@@ -127,6 +127,26 @@ class ChartController extends Controller
         'complaint' => $this->complaint($r),
         'do' => $this->delivery($r),
       ]),200);
+    }
+
+    public function getMotivation(){
+      return response()->json(Api::response(true, 'Sukses', Motivation::get()),200);
+    }
+
+    public function getGoodsThisMonth(){
+      $start = date('Y-m-01 00:00:00');
+      $end = date("Y-m-t 23:59:59", strtotime($start));
+      $q = Delivery::selectRaw("SUM(do_qty) AS qty, master.master_stock.stock_name, master.master_stock.stock_size, master.master_stock.stock_type, master.master_stock.stock_brand, master.master_stock.stock_color ")
+        ->join('stock.stock', 'stock.stock.main_stock_code', '=', 'document.delivery_order.main_stock_code')
+        ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code')
+        ->where(function($q) use($start, $end){
+          $q->where('create_date', ">=", $start);
+          $q->where('create_date', "<=", $end);
+        })
+        ->groupBy(['document.delivery_order.main_stock_code', 'master.master_stock.stock_name', 'master.master_stock.stock_size', 'master.master_stock.stock_type', 'master.master_stock.stock_brand', 'master.master_stock.stock_color'])
+        ->take(5)
+        ->orderByRaw('SUM(do_qty) DESC');
+      return response()->json(Api::response(true, 'Sukses', ($q->count()>0?$q->get():[])),200);;
     }
 
 }

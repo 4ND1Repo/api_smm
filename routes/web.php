@@ -379,6 +379,8 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
       // chart stock out data
       $router->get('stock/out', 'General\ChartController@stock_out');
       $router->get('stock/out/data', 'General\ChartController@dashboard_data');
+      $router->get('motivation', 'General\ChartController@getMotivation');
+      $router->get('stock/in', 'General\ChartController@getGoodsThisMonth');
     });
 
 });
