@@ -344,6 +344,87 @@ class StockController extends Controller
         return response()->json($data,200);
     }
 
+    public function history_get(Request $r){
+        // collect data from post
+        $input = $r->input();
+
+        $column_search = [
+            'stock.stock.stock_code',
+            'stock.qty.nik',
+            'stock.qty.stock_notes',
+            'master.master_stock.stock_name',
+            'master.master_stock.stock_size',
+            'master.master_stock.stock_brand',
+            'master.master_stock.stock_type',
+            'master.master_stock.stock_color',
+            'master.master_measure.measure_type',
+            'stock.qty.qty',
+            'stock.qty.stock_price',
+            'master.master_stock.stock_min_qty',
+            'master.master_stock.stock_max_qty',
+            'master.master_supplier.supplier_name'
+        ];
+
+        // generate default
+        if(!isset($input['sort']))
+            $input['sort'] = array(
+                'sort' => 'asc',
+                'field' => 'stock_name'
+            );
+
+        // whole query
+        $sup = Qty::selectRaw('stock.qty.stock_notes, stock.qty.nik, stock.qty.stock_date, stock.qty.stock_price, master.master_supplier.supplier_name, stock.qty.main_stock_code, master.master_stock.*, master.master_measure.measure_type, (stock.qty.qty + CASE WHEN (
+            SELECT TOP 1 SUM(qty) FROM stock.qty_out WHERE
+                main_stock_code=stock.qty.main_stock_code
+                AND stock_price=stock.qty.stock_price
+                AND stock_date=stock.qty.stock_date
+                AND (supplier_code=stock.qty.supplier_code OR supplier_code IS NULL)
+            GROUP BY main_stock_code, stock_price, stock_date, supplier_code
+            ) IS NOT NULL THEN (
+                SELECT TOP 1 SUM(qty) FROM stock.qty_out WHERE
+                    main_stock_code=stock.qty.main_stock_code
+                    AND stock_price=stock.qty.stock_price
+                    AND stock_date=stock.qty.stock_date
+                    AND (supplier_code=stock.qty.supplier_code OR supplier_code IS NULL)
+                GROUP BY main_stock_code, stock_price, stock_date, supplier_code
+                ) ELSE 0 END) AS stock_qty')
+            ->join('stock.stock', 'stock.stock.main_stock_code', '=', 'stock.qty.main_stock_code')
+            ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code')
+            ->join('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
+            ->leftJoin('master.master_supplier', 'master.master_supplier.supplier_code', '=', 'stock.qty.supplier_code')
+            ->where(['stock.stock.page_code' => $input['page_code']]);
+
+        // condition for date range
+        if(isset($input['query']['start_date']))
+            $sup->whereRaw("stock_date >= '".$input['query']['start_date']." 00:00:00'");
+        if(isset($input['query']['end_date']))
+            $sup->whereRaw("stock_date <= '".$input['query']['end_date']." 23:59:59'");
+
+        // where condition
+        if(isset($input['query'])){
+            if(!is_null($input['query']) and !empty($input['query'])){
+                foreach($input['query'] as $field => $val){
+                    if(in_array($field, array('measure_code','stock_brand','stock_size','stock_type','stock_color','stock_daily_use')) && (!is_null($val) && !empty($val)))
+                        $sup->where("master.master_stock.".$field,($val=="null"?NULL:urldecode($val)));
+                    else if($field == 'find'){
+                        if(!empty($val)){
+                            $sup->where(function($sup) use($column_search,$val){
+                                foreach($column_search as $row)
+                                    $sup->orWhere($row,'like',(in_array($row,['master.master_stock.stock_name'])?"":"%").$val."%");
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        $sup->orderBy($input['sort']['field'],$input['sort']['sort']);
+
+        $data = $sup->get();
+
+        return response()->json($data,200);
+    }
+
     public function history(Request $r){
         // collect data from post
         $input = $r->input();
@@ -394,6 +475,12 @@ class StockController extends Controller
         ->leftJoin('master.master_supplier', 'master.master_supplier.supplier_code', '=', 'stock.qty.supplier_code')
         ->where(['stock.stock.page_code' => $input['page_code']]);
 
+        // condition for date range
+        if(isset($input['query']['start_date']))
+            $sup->whereRaw("stock_date >= '".$input['query']['start_date']." 00:00:00'");
+        if(isset($input['query']['end_date']))
+            $sup->whereRaw("stock_date <= '".$input['query']['end_date']." 23:59:59'");
+
         // where condition
         if(isset($input['query'])){
             if(!is_null($input['query']) and !empty($input['query'])){
@@ -441,6 +528,73 @@ class StockController extends Controller
         return response()->json($data,200);
     }
 
+    public function history_out_get(Request $r){
+        // collect data from post
+        $input = $r->input();
+
+        $column_search = [
+            'stock.stock.stock_code',
+            'stock.qty_out.nik',
+            'stock.qty_out.stock_notes',
+            'master.master_stock.stock_name',
+            'master.master_stock.stock_size',
+            'master.master_stock.stock_brand',
+            'master.master_stock.stock_type',
+            'master.master_stock.stock_color',
+            'master.master_measure.measure_type',
+            'stock.qty_out.qty',
+            'stock.qty_out.stock_price',
+            'master.master_stock.stock_min_qty',
+            'master.master_stock.stock_max_qty',
+            'master.master_supplier.supplier_name'
+        ];
+
+        // generate default
+        if(!isset($input['sort']))
+            $input['sort'] = array(
+                'sort' => 'asc',
+                'field' => 'stock_name'
+            );
+
+        // whole query
+        $sup = QtyOut::selectRaw('stock.qty_out.stock_notes, stock.qty_out.nik, stock.qty_out.stock_date, stock.qty_out.stock_out_date, stock.qty_out.stock_price, master.master_supplier.supplier_name, stock.qty_out.main_stock_code, master.master_stock.*, master.master_measure.measure_type, stock.qty_out.qty AS stock_qty')
+            ->join('stock.stock', 'stock.stock.main_stock_code', '=', 'stock.qty_out.main_stock_code')
+            ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code')
+            ->join('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
+            ->leftJoin('master.master_supplier', 'master.master_supplier.supplier_code', '=', 'stock.qty_out.supplier_code')
+            ->where(['stock.stock.page_code' => $input['page_code']]);
+
+        // condition for date range
+        if(isset($input['query']['start_date']))
+            $sup->whereRaw("stock_date >= '".$input['query']['start_date']." 00:00:00'");
+        if(isset($input['query']['end_date']))
+            $sup->whereRaw("stock_date <= '".$input['query']['end_date']." 23:59:59'");
+
+        // where condition
+        if(isset($input['query'])){
+            if(!is_null($input['query']) and !empty($input['query'])){
+                foreach($input['query'] as $field => $val){
+                    if(in_array($field, array('measure_code','stock_brand','stock_size','stock_type','stock_color','stock_daily_use')) && (!is_null($val) && !empty($val)))
+                        $sup->where("master.master_stock.".$field,($val=="null"?NULL:urldecode($val)));
+                    else if($field == 'find'){
+                        if(!empty($val)){
+                            $sup->where(function($sup) use($column_search,$val){
+                                foreach($column_search as $row)
+                                    $sup->orWhere($row,'like',(in_array($row,['master.master_stock.stock_name'])?"":"%").$val."%");
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        $sup->orderBy($input['sort']['field'],$input['sort']['sort']);
+
+        $data = $sup->get();
+
+        return response()->json($data,200);
+    }
+
     public function history_out(Request $r){
         // collect data from post
         $input = $r->input();
@@ -476,6 +630,12 @@ class StockController extends Controller
         ->join('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
         ->leftJoin('master.master_supplier', 'master.master_supplier.supplier_code', '=', 'stock.qty_out.supplier_code')
         ->where(['stock.stock.page_code' => $input['page_code']]);
+
+        // condition for date range
+        if(isset($input['query']['start_date']))
+            $sup->whereRaw("stock_date >= '".$input['query']['start_date']." 00:00:00'");
+        if(isset($input['query']['end_date']))
+            $sup->whereRaw("stock_date <= '".$input['query']['end_date']." 23:59:59'");
 
         // where condition
         if(isset($input['query'])){

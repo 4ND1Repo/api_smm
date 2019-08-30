@@ -319,8 +319,18 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
             $router->post('get','Warehouse\StockController@get');
             $router->post('grid','Warehouse\StockController@grid');
             $router->post('qty','Warehouse\StockController@qty');
-            $router->post('history','Warehouse\StockController@history');
-            $router->post('history_out','Warehouse\StockController@history_out');
+
+            // history in group
+            $router->group(['prefix' => 'history'], function() use($router){
+                $router->post('/','Warehouse\StockController@history');
+                $router->post('get','Warehouse\StockController@history_get');
+            });
+
+            // history out group
+            $router->group(['prefix' => 'history_out'], function() use($router){
+                $router->post('/','Warehouse\StockController@history_out');
+                $router->post('get','Warehouse\StockController@history_out_get');
+            });
 
             // warehouse stock cabinet
             $router->group(['prefix' => 'cabinet'], function() use($router){
