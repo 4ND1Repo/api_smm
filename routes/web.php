@@ -28,6 +28,12 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
         // master city group
         $router->group(['prefix'=>'city'], function() use($router){
             $router->get('/','Master\CityController@index');
+            $router->get('find/{id}', 'Master\CityController@find');
+            $router->post('get','Master\CityController@get');
+            $router->post('grid','Master\CityController@grid');
+            $router->post('add', 'Master\CityController@add');
+            $router->post('edit', 'Master\CityController@edit');
+            $router->post('delete', 'Master\CityController@delete');
         });
 
         // master Company group
