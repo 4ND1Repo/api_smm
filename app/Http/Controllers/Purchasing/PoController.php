@@ -127,7 +127,8 @@ class PoController extends Controller
                 ->join('document.purchase_order', 'document.purchase_order.po_code', '=', 'document.purchase_order_detail.po_code')
                 ->leftJoin('master.master_supplier', 'master.master_supplier.supplier_code', '=', 'document.purchase_order_detail.supplier_code')
                 ->leftJoin('master.master_city', 'master.master_city.city_code', '=', 'master.master_supplier.city_code')
-                ->where('document.purchase_order_detail.po_code',$r->po_code)->get();
+                ->where('document.purchase_order_detail.po_code',$r->po_code)
+                ->where('document.purchase_order_detail.supplier_code', $r->supplier_code)->get();
         $data = [];
         foreach ($query as $i => $row) {
           if(!is_null($row->supplier_code) && !empty($row->supplier_code))
@@ -423,5 +424,18 @@ class PoController extends Controller
         ];
 
         return response()->json($data,200);
+    }
+
+    public function supplier(Request $r){
+        $q = PODetail::select('supplier_code')->where(['po_code' => $r->po_code])->groupBy(['supplier_code']);
+        if($q->count() > 0){
+            $data = [];
+            foreach ($q->get() AS $row){
+                $data[] = $row->supplier_code;
+            }
+            return response()->json(Api::response(true,"Sukses",$data),200);
+        }
+
+        return response()->json(Api::response(false,"Gagal"),200);
     }
 }

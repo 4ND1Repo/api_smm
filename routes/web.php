@@ -240,6 +240,7 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
                 $router->post('print_data', 'Purchasing\PoController@print_data');
                 $router->post('get', 'Purchasing\PoController@get');
                 $router->post('grid', 'Purchasing\PoController@grid');
+                $router->post('supplier', 'Purchasing\PoController@supplier');
                 // history group
                 $router->group(['prefix' => 'history'], function() use($router){
                   $router->post('get', 'Purchasing\PoController@history_get');
