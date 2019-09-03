@@ -7,6 +7,8 @@
 !app/Http/Controllers/*/*/*
 !app/Http/Controllers/*/*/*/*
 !app/Http/Controllers/*/*/*/*/*
+!app/Http/Middleware
+!app/Http/Middleware/CorsMiddleware.php
 !app/Model
 !app/Model/*
 !app/Model/*/*

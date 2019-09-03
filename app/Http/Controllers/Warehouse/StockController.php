@@ -566,9 +566,9 @@ class StockController extends Controller
 
         // condition for date range
         if(isset($input['query']['start_date']))
-            $sup->whereRaw("stock_date >= '".$input['query']['start_date']." 00:00:00'");
+            $sup->whereRaw("stock_out_date >= '".$input['query']['start_date']." 00:00:00'");
         if(isset($input['query']['end_date']))
-            $sup->whereRaw("stock_date <= '".$input['query']['end_date']." 23:59:59'");
+            $sup->whereRaw("stock_out_date <= '".$input['query']['end_date']." 23:59:59'");
 
         // where condition
         if(isset($input['query'])){
@@ -633,9 +633,9 @@ class StockController extends Controller
 
         // condition for date range
         if(isset($input['query']['start_date']))
-            $sup->whereRaw("stock_date >= '".$input['query']['start_date']." 00:00:00'");
+            $sup->whereRaw("stock_out_date >= '".$input['query']['start_date']." 00:00:00'");
         if(isset($input['query']['end_date']))
-            $sup->whereRaw("stock_date <= '".$input['query']['end_date']." 23:59:59'");
+            $sup->whereRaw("stock_out_date <= '".$input['query']['end_date']." 23:59:59'");
 
         // where condition
         if(isset($input['query'])){
