@@ -17,6 +17,8 @@
 !app/Model/*/*/*/*/*
 !app/Helpers
 !app/Helpers/*
+!bootstrap
+!bootstrap/app.php
 !database
 !database/raw
 !database/raw/*
