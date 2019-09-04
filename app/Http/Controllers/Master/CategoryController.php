@@ -60,7 +60,7 @@ class CategoryController extends Controller
             $old->first();
 
             // validate for same name
-            $validate = Category::where('category_name',$r->category_name)->get();
+            $validate = Category::where('category_name',$r->category_name, false)->get();
 
             if($validate->count() == 0){
                 $old->update([

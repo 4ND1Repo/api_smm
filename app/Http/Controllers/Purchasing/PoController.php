@@ -177,7 +177,7 @@ class PoController extends Controller
         ->join('master.master_status', 'master.master_status.status_code', '=', 'document.purchase_order.status')
         ->join('master.master_page', 'master.master_page.page_code', '=', 'document.purchase_order.page_code')
         ->where(['document.purchase_order.page_code_destination' => $input['page_code']])
-        ->whereIn('document.purchase_order.status', ['ST02','ST05','ST06']);
+        ->whereIn('document.purchase_order.status', ['ST02','ST06']);
 
         // where condition
         if(isset($input['query'])){
@@ -227,7 +227,7 @@ class PoController extends Controller
         ->join('master.master_status', 'master.master_status.status_code', '=', 'document.purchase_order.status')
         ->join('master.master_page', 'master.master_page.page_code', '=', 'document.purchase_order.page_code')
         ->where(['document.purchase_order.page_code_destination' => $input['page_code']])
-        ->whereIn('document.purchase_order.status', ['ST02']);
+        ->whereIn('document.purchase_order.status', ['ST02','ST06']);
 
         // where condition
         if(isset($input['query'])){

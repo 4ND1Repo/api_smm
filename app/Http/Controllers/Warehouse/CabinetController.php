@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 
 // Embed a model
 use App\Model\Stock\CabinetModel AS Cabinet;
+use App\Model\Stock\StockModel AS Stock;
 
 // Embed a Helper
 use DB;

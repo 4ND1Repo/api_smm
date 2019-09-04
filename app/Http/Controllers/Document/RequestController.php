@@ -519,7 +519,7 @@ class RequestController extends Controller
                     $stock_qty = $stk->qty;
                     // process update status for waiting list fullfillment in request tools
                     foreach($rtd AS $i => $row){
-                      if($this->_check_qty($row->req_tools_qty, $stk->stock_code, $stk->page_code)){
+                      if(!$this->_check_qty($row->req_tools_qty, $stk->stock_code, $stk->page_code)){
                         ReqToolsDetail::where([
                           'req_tools_code' => $row->req_tools_code,
                           'stock_code' => $row->stock_code
