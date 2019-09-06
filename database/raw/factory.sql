@@ -506,7 +506,8 @@ INSERT INTO [master].[master_menu](id_menu, menu_name, menu_url,menu_icon,id_par
 (25, 'Barang Pinjaman', '/req/borrow', 'fa fa-people-carry', 2),
 (26, 'Riwayat Aktifitas', '/mng/activity', 'fa fa-history', 21),
 (27, 'Harga', '/stk/pricing', 'fa fa-money-bill', 15),
-(28, 'Kota', '/mst/city', 'fa fa-building', 9)
+(28, 'Kota', '/mst/city', 'fa fa-building', 9),
+(29, 'Barcode', '/stk/barcode', 'fa fa-barcode', 15)
 GO
 INSERT INTO [master].[master_company](company_code,company_name) VALUES
 ('CP01','Sarana Makin Mulia, PT.')
@@ -548,6 +549,7 @@ INSERT INTO [account].[user_menu](group_code, id_menu, "add", "edit", "del") VAL
 ('USGP002', 19, 1, 1, 1),
 ('USGP002', 20, 1, 1, 1),
 ('USGP002', 25, 1, 1, 1),
+('USGP002', 28, 1, 1, 1),
 ('USGP003', 1, 1, 1, 1),
 ('USGP003', 9, 1, 1, 1),
 ('USGP003', 11, 1, 1, 1),

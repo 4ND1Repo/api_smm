@@ -47,7 +47,7 @@ class RequestController extends Controller
     }
 
     private function _generate_prefix_po(){
-        $prefix = "PO".date("y");
+        $prefix = "PO".date("ym");
         $SP = PO::select('po_code')->orderBy('po_code', 'DESC')->get();
         if($SP->count() > 0){
             $SP = $SP->first();
@@ -56,7 +56,7 @@ class RequestController extends Controller
         } else
             $count = 1;
 
-        return $prefix.sprintf("%07d",$count);
+        return $prefix.sprintf("%05d",$count);
     }
 
     public function index(){
@@ -584,9 +584,10 @@ class RequestController extends Controller
         $input = $r->input();
 
         $column_search = [
-            'po_code',
+            'document.purchase_order.po_code',
             'po_date',
-            'page_name'
+            'page_name',
+            'po_detail.stock_code'
         ];
 
         // generate default
@@ -595,11 +596,18 @@ class RequestController extends Controller
                 'sort' => 'desc',
                 'field' => 'po_date'
             );
+        $find = "";
+        if(isset($input['query']['find'])){
+            if(!empty($input['query']['find'])){
+                $find = "AND stock.stock.stock_code = '".$input['query']['find']."'";
+            }
+        }
 
         // whole query
         $sup = PO::selectRaw('document.purchase_order.*, (SELECT count(po_code) FROM document.purchase_order_detail WHERE po_code=document.purchase_order.po_code) as sum_item, master.master_status.status_label, master.master_page.page_name')
         ->join('master.master_status', 'master.master_status.status_code', '=', 'document.purchase_order.status')
         ->join('master.master_page', 'master.master_page.page_code', '=', 'document.purchase_order.page_code_destination')
+        ->leftJoin(DB::raw("(SELECT TOP 1 po_code, stock.stock.stock_code FROM document.purchase_order_detail JOIN stock.stock ON stock.stock.main_stock_code = document.purchase_order_detail.main_stock_code WHERE 1=1 ".$find." GROUP BY po_code, stock.stock.stock_code) AS po_detail"), 'po_detail.po_code', '=', 'document.purchase_order.po_code')
         ->where(['document.purchase_order.page_code' => $input['page_code']])
         ->whereIn('document.purchase_order.status', ['ST02']);
 
@@ -633,9 +641,10 @@ class RequestController extends Controller
         $input = $r->input();
 
         $column_search = [
-            'po_code',
+            'document.purchase_order.po_code',
             'po_date',
-            'page_name'
+            'page_name',
+            'po_detail.stock_code'
         ];
 
         // generate default
@@ -644,11 +653,17 @@ class RequestController extends Controller
                 'sort' => 'desc',
                 'field' => 'po_date'
             );
-
+        $find = "";
+        if(isset($input['query']['find'])){
+            if(!empty($input['query']['find'])){
+                $find = "AND stock.stock.stock_code = '".$input['query']['find']."'";
+            }
+        }
         // whole query
         $sup = PO::selectRaw('document.purchase_order.*, (SELECT count(po_code) FROM document.purchase_order_detail WHERE po_code=document.purchase_order.po_code) as sum_item, master.master_status.status_label, master.master_page.page_name')
         ->join('master.master_status', 'master.master_status.status_code', '=', 'document.purchase_order.status')
         ->join('master.master_page', 'master.master_page.page_code', '=', 'document.purchase_order.page_code_destination')
+        ->leftJoin(DB::raw("(SELECT TOP 1 po_code, stock.stock.stock_code FROM document.purchase_order_detail JOIN stock.stock ON stock.stock.main_stock_code = document.purchase_order_detail.main_stock_code WHERE 1=1 ".$find." GROUP BY po_code, stock.stock.stock_code) AS po_detail"), 'po_detail.po_code', '=', 'document.purchase_order.po_code')
         ->where(['document.purchase_order.page_code' => $input['page_code']])
         ->whereIn('document.purchase_order.status', ['ST02']);
 
