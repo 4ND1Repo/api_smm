@@ -48,7 +48,7 @@ class RequestController extends Controller
 
     private function _generate_prefix_po(){
         $prefix = "PO".date("ym");
-        $SP = PO::select('po_code')->orderBy('po_code', 'DESC')->get();
+        $SP = PO::select('po_code')->where('po_code','LIKE',$prefix.'%')->orderBy('po_code', 'DESC')->get();
         if($SP->count() > 0){
             $SP = $SP->first();
             $tmp = explode($prefix, $SP->po_code);
