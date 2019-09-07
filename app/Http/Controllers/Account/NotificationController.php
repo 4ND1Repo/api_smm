@@ -88,8 +88,12 @@ class NotificationController extends Controller
       ];
       if($r->has('nik')){
         $where = ['notification_to' => $r->nik];
+        
+        $query3 = Notification::where($where)->where(['notification_read' => 0]);
+        $unread = $query3->count();
+
         if($r->init == 0)
-        $where['notification_send'] = 0;
+          $where['notification_send'] = 0;
 
         $query = Notification::where($where);
         $cnt = $query->count();
@@ -97,8 +101,10 @@ class NotificationController extends Controller
         if($r->init == 1)
           $query2->skip(($cnt-10));
         $query2->take(10)->orderBy('notification_id', 'ASC');
+        
 
         $data['count'] = $cnt;
+        $data['unread'] = $unread;
         $data['content'] = ($query->count() > 0 || $r->init == 1)? $query2->get() : [];
         if($data['count'] > 0){
           $arrId = [];

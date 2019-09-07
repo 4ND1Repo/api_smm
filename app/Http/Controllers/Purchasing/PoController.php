@@ -179,6 +179,12 @@ class PoController extends Controller
         ->where(['document.purchase_order.page_code_destination' => $input['page_code']])
         ->whereIn('document.purchase_order.status', ['ST02','ST06']);
 
+        // condition for date range
+        if(isset($input['query']['start_date']))
+            $sup->whereRaw("document.purchase_order.po_date >= '".$input['query']['start_date']." 00:00:00'");
+        if(isset($input['query']['end_date']))
+            $sup->whereRaw("document.purchase_order.po_date <= '".$input['query']['end_date']." 23:59:59'");
+
         // where condition
         if(isset($input['query'])){
             if(!is_null($input['query']) and !empty($input['query'])){
@@ -228,6 +234,12 @@ class PoController extends Controller
         ->join('master.master_page', 'master.master_page.page_code', '=', 'document.purchase_order.page_code')
         ->where(['document.purchase_order.page_code_destination' => $input['page_code']])
         ->whereIn('document.purchase_order.status', ['ST02','ST06']);
+
+        // condition for date range
+        if(isset($input['query']['start_date']))
+            $sup->whereRaw("document.purchase_order.po_date >= '".$input['query']['start_date']." 00:00:00'");
+        if(isset($input['query']['end_date']))
+            $sup->whereRaw("document.purchase_order.po_date <= '".$input['query']['end_date']." 23:59:59'");
 
         // where condition
         if(isset($input['query'])){
@@ -315,6 +327,12 @@ class PoController extends Controller
         ->where(['document.purchase_order.page_code_destination' => $input['page_code']])
         ->whereIn('document.purchase_order.status', ['ST05','ST09']);
 
+        // condition for date range
+        if(isset($input['query']['start_date']))
+            $sup->whereRaw("document.purchase_order.po_date >= '".$input['query']['start_date']." 00:00:00'");
+        if(isset($input['query']['end_date']))
+            $sup->whereRaw("document.purchase_order.po_date <= '".$input['query']['end_date']." 23:59:59'");
+
         // where condition
         if(isset($input['query'])){
             if(!is_null($input['query']) and !empty($input['query'])){
@@ -378,6 +396,12 @@ class PoController extends Controller
         ->join('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
         ->where(['document.purchase_order.page_code_destination' => $input['page_code']])
         ->whereIn('document.purchase_order.status', ['ST05','ST09']);
+
+        // condition for date range
+        if(isset($input['query']['start_date']))
+            $sup->whereRaw("document.purchase_order.po_date >= '".$input['query']['start_date']." 00:00:00'");
+        if(isset($input['query']['end_date']))
+            $sup->whereRaw("document.purchase_order.po_date <= '".$input['query']['end_date']." 23:59:59'");
 
         // where condition
         if(isset($input['query'])){
