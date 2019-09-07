@@ -55,6 +55,7 @@ class SupplierController extends Controller
         $sup->supplier_address = $r->input('supplier_address');
         $sup->city_code = $r->input('city_code');
         $sup->supplier_category = $r->input('supplier_category');
+        $sup->supplier_npwp = $r->input('supplier_npwp');
         $sup->status_code = "ST01";
         $res = $sup->save();
 
@@ -75,6 +76,7 @@ class SupplierController extends Controller
                 'supplier_phone' => $r->input('supplier_phone'),
                 'supplier_address' => $r->input('supplier_address'),
                 'supplier_category' => $r->input('supplier_category'),
+                'supplier_npwp' => $r->input('supplier_npwp'),
                 'city_code' => $r->input('city_code')
             ]);
 
@@ -105,6 +107,7 @@ class SupplierController extends Controller
             'supplier_name',
             'supplier_phone',
             'supplier_address',
+            'supplier_npwp',
             'city_name',
             'master.master_city.city_code',
             'supplier_category'
@@ -155,6 +158,7 @@ class SupplierController extends Controller
             'supplier_name',
             'supplier_phone',
             'supplier_address',
+            'supplier_npwp',
             'city_name',
             'master.master_city.city_code',
             'supplier_category'

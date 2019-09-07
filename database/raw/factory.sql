@@ -242,6 +242,7 @@ CREATE TABLE [master].[master_supplier](
 	[city_code] [varchar](10) NULL,
 	[supplier_phone] [varchar](20) NULL,
 	[supplier_category] [varchar](20) NULL,
+	[supplier_npwp] [varchar](50) NULL,
 	[status_code] [varchar](4) NULL DEFAULT('ST01'),
 ) ON [PRIMARY]
 GO

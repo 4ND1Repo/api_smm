@@ -51,8 +51,12 @@ class ComplaintController extends Controller
         if($id != "0")
           $q->where('create_by', $id);
 
-        if($r->has('nik')){
-          $q->where('complaint_to', $r->nik);
+        if($r->has('info'))
+          $q->whereRaw('complaint_to IS NULL');
+        else {
+          if($r->has('nik')){
+            $q->where('complaint_to', $r->nik);
+          }
         }
 
         // Order By
