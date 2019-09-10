@@ -190,18 +190,22 @@ class StockController extends Controller
         $return = [];
         // $stock = Stock::join('master.master_stock','master.master_stock.stock_code','=','stock.stock.stock_code');
         $stock = DB::select(DB::raw("SELECT * FROM (
-            SELECT stock.stock.main_stock_code, (master.master_stock.stock_code + ' - ' + master.master_stock.stock_name + ' - ' + master.master_stock.stock_type + ' - ' + master.master_stock.stock_size + ' - ' + master.master_stock.stock_brand + ' - ' + master.master_measure.measure_type) as stock_name,
-            (SELECT SUM(rqd.req_tools_qty) as qty FROM document.request_tools_detail rqd JOIN document.request_tools rq ON rq.req_tools_code = rqd.req_tools_code WHERE rqd.stock_code = master.master_stock.stock_code AND rq.page_code='".$r->page_code."' AND rqd.fullfillment=0 GROUP BY rqd.stock_code, rq.page_code, rqd.fullfillment) as need_qty
+            SELECT stock.stock.main_stock_code, (master.master_stock.stock_code + ' - ' + master.master_stock.stock_name + ' - ' + master.master_stock.stock_type + ' - ' + master.master_stock.stock_size + ' - ' + master.master_stock.stock_brand + ' - ' + master.master_measure.measure_type) as stock_find,
+            (SELECT SUM(rqd.req_tools_qty) as qty FROM document.request_tools_detail rqd JOIN document.request_tools rq ON rq.req_tools_code = rqd.req_tools_code WHERE rqd.stock_code = master.master_stock.stock_code AND rq.page_code='".$r->page_code."' AND rqd.fullfillment=0 GROUP BY rqd.stock_code, rq.page_code, rqd.fullfillment) as need_qty,
+            master.master_stock.*,
+            CASE WHEN stock_qty.qty IS NOT NULL THEN stock_qty.qty ELSE 0 END AS qty
             FROM stock.stock
             JOIN master.master_stock ON master.master_stock.stock_code = stock.stock.stock_code".($r->has('stock_daily_use')?" AND stock_daily_use = 1":"")."
             JOIN master.master_measure ON master.master_measure.measure_code = master.master_stock.measure_code
-        ) as stock WHERE stock_name LIKE '%".$r->find."%'"));
+            LEFT JOIN (SELECT DISTINCT main_stock_code, SUM(qty) AS qty FROM stock.qty GROUP BY main_stock_code) AS stock_qty ON stock_qty.main_stock_code = stock.stock.main_stock_code
+        ) as stock WHERE stock_find LIKE '%".$r->find."%'"));
         if(count($stock) > 0)
             foreach($stock as $row){
                 $return[] = [
                     'id' => $row->main_stock_code,
-                    'label' => $row->stock_name,
-                    'need' => $row->need_qty
+                    'label' => $row->stock_find,
+                    'need' => $row->need_qty,
+                    'data' => $row
                 ];
             }
         return $return;

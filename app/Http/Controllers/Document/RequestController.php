@@ -78,9 +78,13 @@ class RequestController extends Controller
     public function find_tools($id){
         $data = [];
         $data['request_tools'] = ReqTools::where('req_tools_code',$id)->first();
-        $data['request_tools_detail'] = ReqToolsDetail::selectRaw('master.master_stock.*, master.master_measure.measure_type, document.request_tools_detail.req_tools_code, document.request_tools_detail.req_tools_qty, document.request_tools_detail.finish_by, document.request_tools_detail.fullfillment, document.request_tools_detail.req_tools_notes')
+        $data['request_tools_detail'] = ReqToolsDetail::selectRaw('master.master_stock.*, master.master_measure.measure_type, document.request_tools_detail.req_tools_code, document.request_tools_detail.req_tools_qty, document.request_tools_detail.finish_by, document.request_tools_detail.fullfillment, document.request_tools_detail.req_tools_notes, qty.stock_qty')
             ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'document.request_tools_detail.stock_code')
             ->join('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
+            ->join('stock.stock', function($join){
+                $join->on('stock.stock.stock_code', '=', 'master.master_stock.stock_code');
+                $join->on('stock.stock.page_code', '=', DB::raw("'wh'"));
+            })->leftJoin(DB::raw("(SELECT DISTINCT main_stock_code, SUM(qty) AS stock_qty FROM stock.qty GROUP BY main_stock_code ) AS qty"),'qty.main_stock_code','=','stock.stock.main_stock_code')
                 ->where('req_tools_code',$id)->get();
         return Api::response(true,"Sukses",$data);
     }
