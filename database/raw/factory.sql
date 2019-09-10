@@ -112,6 +112,7 @@ CREATE TABLE [document].[purchase_order](
 GO
 
 CREATE TABLE [document].[purchase_order_detail](
+	[pod_code] [varchar](20) NOT NULL,
 	[po_code] [varchar](20) NOT NULL,
 	[main_stock_code] [varchar](20) NOT NULL,
 	[po_qty] [decimal](20,2) NOT NULL,
@@ -121,6 +122,9 @@ CREATE TABLE [document].[purchase_order_detail](
 	[stock_delivery_price] [decimal](20,2) NULL,
 	[po_old_qty] [decimal](20,2) NULL,
 	[po_notes] [varchar](255) NULL,
+	[urgent] [bit] NOT NULL DEFAULT((0)),
+	[status] [varchar](10) NOT NULL DEFAULT(('ST01')),
+	[po_pic] [varchar](20) NULL,
 	[edit_by] [varchar](20) NULL,
 	[edit_date] [datetime] NULL
 ) ON [PRIMARY]

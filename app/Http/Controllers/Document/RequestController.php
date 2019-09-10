@@ -59,6 +59,19 @@ class RequestController extends Controller
         return $prefix.sprintf("%05d",$count);
     }
 
+    private function _generate_prefix_pod(){
+        $prefix = "POD".date("ym");
+        $SP = PODetail::select('pod_code')->where('pod_code','LIKE',$prefix.'%')->orderBy('pod_code', 'DESC')->get();
+        if($SP->count() > 0){
+            $SP = $SP->first();
+            $tmp = explode($prefix, $SP->pod_code);
+            $count = ((int)$tmp[1])+1;
+        } else
+            $count = 1;
+
+        return $prefix.sprintf("%05d",$count);
+    }
+
     public function index(){
         return date("Y-m-d H:i:s");
     }
@@ -78,7 +91,7 @@ class RequestController extends Controller
     public function find_tools($id){
         $data = [];
         $data['request_tools'] = ReqTools::where('req_tools_code',$id)->first();
-        $data['request_tools_detail'] = ReqToolsDetail::selectRaw('master.master_stock.*, master.master_measure.measure_type, document.request_tools_detail.req_tools_code, document.request_tools_detail.req_tools_qty, document.request_tools_detail.finish_by, document.request_tools_detail.fullfillment, document.request_tools_detail.req_tools_notes, qty.stock_qty')
+        $data['request_tools_detail'] = ReqToolsDetail::selectRaw('master.master_stock.*, master.master_measure.measure_type, document.request_tools_detail.req_tools_code, document.request_tools_detail.req_tools_qty, document.request_tools_detail.finish_by, document.request_tools_detail.fullfillment, document.request_tools_detail.req_tools_notes, CASE WHEN qty.stock_qty IS NOT NULL THEN qty.stock_qty ELSE 0 END AS stock_qty')
             ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'document.request_tools_detail.stock_code')
             ->join('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
             ->join('stock.stock', function($join){
@@ -306,10 +319,15 @@ class RequestController extends Controller
         if($po->save()){
             foreach($r->data as $main_stock_code => $qty){
                 $pod = new PODetail;
+                $pod->pod_code = $this->_generate_prefix_pod();
                 $pod->po_code = $po->po_code;
                 $pod->main_stock_code = $main_stock_code;
                 $pod->po_qty = (float) $qty;
                 $pod->po_notes = isset($r->notes[$main_stock_code])?$r->notes[$main_stock_code]:NULL;
+                if($r->has('urgent')){
+                    if(isset($r->urgent[$main_stock_code]))
+                        $pod->urgent = 1;
+                }
                 $pod->save();
             }
             Log::add([
