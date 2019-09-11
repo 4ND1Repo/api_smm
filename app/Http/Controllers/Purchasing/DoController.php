@@ -59,6 +59,7 @@ class DoController extends Controller
             ->join('document.purchase_order_detail', function($query){
               $query->on('document.purchase_order_detail.main_stock_code','=','document.delivery_order.main_stock_code');
               $query->on('document.purchase_order_detail.po_code','=','document.delivery_order.po_code');
+              $query->on('document.purchase_order_detail.pod_code','=','document.delivery_order.pod_code');
             })
             ->join('master.master_supplier', 'document.purchase_order_detail.supplier_code', '=', 'master.master_supplier.supplier_code');
         if(isset($input['query']['start_date']))
@@ -120,6 +121,7 @@ class DoController extends Controller
             ->join('document.purchase_order_detail', function($query){
               $query->on('document.purchase_order_detail.main_stock_code','=','document.delivery_order.main_stock_code');
               $query->on('document.purchase_order_detail.po_code','=','document.delivery_order.po_code');
+              $query->on('document.purchase_order_detail.pod_code','=','document.delivery_order.pod_code');
             })
             ->join('master.master_supplier', 'document.purchase_order_detail.supplier_code', '=', 'master.master_supplier.supplier_code');
         if(isset($input['query']['start_date']))
