@@ -495,73 +495,80 @@ class RequestController extends Controller
     public function add_do(Request $r){
         // record to DO table
         $date = date("Y-m-d H:i:s");
+        $item = 0;
         foreach ($r->do as $po_code => $row) {
-          foreach ($row as $main_stock_code => $do_code) {
+          foreach ($row as $pod_code => $do_code) {
               // get qty
-              $qty = $r->data[$po_code][$main_stock_code];
+              $qty = $r->data[$po_code][$pod_code];
+              $main_stock_code = $r->main_stock_code[$po_code][$pod_code];
 
-              $do = new DocDO;
-              $do->do_code = $do_code;
-              $do->po_code = $po_code;
-              $do->page_code = $r->page_code;
-              $do->main_stock_code = $main_stock_code;
-              $do->do_qty = $qty;
-              $do->create_by = $r->nik;
-              $do->create_date = $date;
-              if($do->save()){
-                $pod = PODetail::selectRaw('supplier_code, stock_price')->where(['po_code' => $po_code, 'main_stock_code' => $main_stock_code])->first();
-                // save to stock Qty Real Prod
-                $qQty = new Qty;
-                $qQty->main_stock_code = $main_stock_code;
-                $qQty->supplier_code = $pod->supplier_code;
-                $qQty->qty = $qty;
-                $qQty->stock_price = is_null($pod->stock_price)?0:$pod->stock_price;
-                $qQty->stock_notes = 'Pembelian';
-                $qQty->stock_date = $date;
-                $qQty->nik = $r->nik;
-                $qQty->do_code = $do_code;
-                if($qQty->save()){
-                  // check status in request tools status to fullfill request if stock available
-                  // get stock code by main_stock_code
-                  $stk = Stock::selectRaw('stock.stock.main_stock_code, stock.stock.stock_code, stock.stock.page_code, CASE WHEN SUM(stock.qty.qty) <> NULL THEN SUM(stock.qty.qty) ELSE 0 END as qty')
-                    ->leftJoin('stock.qty', 'stock.qty.main_stock_code', '=', 'stock.stock.main_stock_code')
-                    ->where(['stock.stock.main_stock_code' => $main_stock_code])
-                    ->groupBy(['stock.stock.main_stock_code', 'stock.stock.stock_code', 'stock.stock.page_code'])->first();
+              if(!empty($qty) && $qty != 0 && !empty($do_code)){
+                  $item++;
 
-                  // get outstanding fullfillment
-                  $rtd = ReqToolsDetail::selectRaw('document.request_tools_detail.req_tools_code, document.request_tools_detail.stock_code, document.request_tools_detail.req_tools_qty')
-                    ->join('document.request_tools','document.request_tools_detail.req_tools_code', '=', 'document.request_tools.req_tools_code')
-                    ->where([
-                      'document.request_tools_detail.stock_code' => $stk->stock_code,
-                      'document.request_tools.page_code' => $stk->page_code,
-                      'document.request_tools_detail.fullfillment' => 0
-                    ])->get();
-
-                  if($rtd->count() > 0){
-                    $stock_qty = $stk->qty;
-                    // process update status for waiting list fullfillment in request tools
-                    foreach($rtd AS $i => $row){
-                      if(!$this->_check_qty($row->req_tools_qty, $stk->stock_code, $stk->page_code)){
-                        ReqToolsDetail::where([
-                          'req_tools_code' => $row->req_tools_code,
-                          'stock_code' => $row->stock_code
-                        ])->update(['fullfillment' => 1]);
-                        $stock_qty -= $row->req_tools_qty;
-                        // update status to process if all stock are fullfillment
-                        $cnt = ReqToolsDetail::where([
-                          'req_tools_code' => $row->req_tools_code,
-                          'fullfillment' => 0
-                        ])->count();
-                        // updating to process in request tools
-                        if($cnt == 0){
-                          ReqTools::where([
-                            'req_tools_code' => $row->req_tools_code
-                          ])->update(['status' => 'ST02']);
+                  $do = new DocDO;
+                  $do->do_code = $do_code;
+                  $do->po_code = $po_code;
+                  $do->pod_code = $pod_code;
+                  $do->page_code = $r->page_code;
+                  $do->main_stock_code = $main_stock_code;
+                  $do->do_qty = $qty;
+                  $do->create_by = $r->nik;
+                  $do->create_date = $date;
+                  if($do->save()){
+                    $pod = PODetail::selectRaw('supplier_code, stock_price')->where(['po_code' => $po_code, 'pod_code' => $pod_code])->first();
+                    // save to stock Qty Real Prod
+                    $qQty = new Qty;
+                    $qQty->main_stock_code = $main_stock_code;
+                    $qQty->supplier_code = $pod->supplier_code;
+                    $qQty->qty = $qty;
+                    $qQty->stock_price = is_null($pod->stock_price)?0:$pod->stock_price;
+                    $qQty->stock_notes = 'Pembelian';
+                    $qQty->stock_date = $date;
+                    $qQty->nik = $r->nik;
+                    $qQty->do_code = $do_code;
+                    if($qQty->save()){
+                      // check status in request tools status to fullfill request if stock available
+                      // get stock code by main_stock_code
+                      $stk = Stock::selectRaw('stock.stock.main_stock_code, stock.stock.stock_code, stock.stock.page_code, CASE WHEN SUM(stock.qty.qty) <> NULL THEN SUM(stock.qty.qty) ELSE 0 END as qty')
+                        ->leftJoin('stock.qty', 'stock.qty.main_stock_code', '=', 'stock.stock.main_stock_code')
+                        ->where(['stock.stock.main_stock_code' => $main_stock_code])
+                        ->groupBy(['stock.stock.main_stock_code', 'stock.stock.stock_code', 'stock.stock.page_code'])->first();
+    
+                      // get outstanding fullfillment
+                      $rtd = ReqToolsDetail::selectRaw('document.request_tools_detail.req_tools_code, document.request_tools_detail.stock_code, document.request_tools_detail.req_tools_qty')
+                        ->join('document.request_tools','document.request_tools_detail.req_tools_code', '=', 'document.request_tools.req_tools_code')
+                        ->where([
+                          'document.request_tools_detail.stock_code' => $stk->stock_code,
+                          'document.request_tools.page_code' => $stk->page_code,
+                          'document.request_tools_detail.fullfillment' => 0
+                        ])->get();
+    
+                      if($rtd->count() > 0){
+                        $stock_qty = $stk->qty;
+                        // process update status for waiting list fullfillment in request tools
+                        foreach($rtd AS $i => $row){
+                          if(!$this->_check_qty($row->req_tools_qty, $stk->stock_code, $stk->page_code)){
+                            ReqToolsDetail::where([
+                              'req_tools_code' => $row->req_tools_code,
+                              'stock_code' => $row->stock_code
+                            ])->update(['fullfillment' => 1]);
+                            $stock_qty -= $row->req_tools_qty;
+                            // update status to process if all stock are fullfillment
+                            $cnt = ReqToolsDetail::where([
+                              'req_tools_code' => $row->req_tools_code,
+                              'fullfillment' => 0
+                            ])->count();
+                            // updating to process in request tools
+                            if($cnt == 0){
+                              ReqTools::where([
+                                'req_tools_code' => $row->req_tools_code
+                              ])->update(['status' => 'ST02']);
+                            }
+                          }
                         }
                       }
                     }
                   }
-                }
               }
           }
 
@@ -571,17 +578,19 @@ class RequestController extends Controller
             PO::where(['po_code' => $po_code])->update(['status' => 'ST05']);
           }
         }
-        Log::add([
-          'type' => 'Add',
-          'nik' => $r->nik,
-          'description' => 'Menambah terima barang dari PO : '.$po_code
-        ]);
+        if($item > 0)
+            Log::add([
+            'type' => 'Add',
+            'nik' => $r->nik,
+            'description' => 'Menambah terima barang dari PO : '.$po_code
+            ]);
+
         return response()->json(Api::response(true,'Sukses'),200);
     }
 
     public function check_do(Request $r){
         $query = DocDO::leftJoin('document.purchase_order_detail', 'document.purchase_order_detail.po_code', '=', 'document.delivery_order.po_code')
-            ->where(['do_code' => $r->do_code, 'supplier_code' => $r->supplier_code]);
+            ->where(['do_code' => $r->do_code, 'supplier_code' => $r->supplier_code, 'document.delivery_order.main_stock_code' => $r->main_stock_code]);
         $cnt = $query->count() == 0;
         return response()->json(Api::response($cnt,!$cnt?"Nomor Surat Jalan sudah ada":"Aman"),200);
     }
@@ -589,13 +598,15 @@ class RequestController extends Controller
     public function find_do($id){
         $data = [];
         $data['purchase_order'] = PO::where('po_code',$id)->first();
-        $data['purchase_order_detail'] = PODetail::selectRaw('master.master_stock.*, document.purchase_order_detail.*, (document.purchase_order_detail.po_qty - CASE WHEN DocDO.qty IS NULL THEN 0 ELSE DocDO.qty END) AS qty, master.master_measure.measure_type')
+        $data['purchase_order_detail'] = PODetail::selectRaw('master.master_stock.*, document.purchase_order_detail.*, (document.purchase_order_detail.po_qty - CASE WHEN DocDO.qty IS NULL THEN 0 ELSE DocDO.qty END) AS qty, master.master_measure.measure_type, master.master_supplier.supplier_name')
                 ->join('stock.stock', 'stock.stock.main_stock_code', '=', 'document.purchase_order_detail.main_stock_code')
                 ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code')
+                ->leftJoin('master.master_supplier', 'master.master_supplier.supplier_code', '=', 'document.purchase_order_detail.supplier_code')
                 ->leftJoin('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
-                ->leftJoin(DB::raw("(SELECT po_code, main_stock_code, sum(do_qty) AS qty FROM document.delivery_order GROUP BY po_code, main_stock_code) AS DocDO"), function($do){
-                  $do->on('DocDO.po_code','=','document.purchase_order_detail.po_code');
-                  $do->on('DocDO.main_stock_code','=','document.purchase_order_detail.main_stock_code');
+                ->leftJoin(DB::raw("(SELECT po_code, main_stock_code, sum(do_qty) AS qty, pod_code FROM document.delivery_order GROUP BY po_code, main_stock_code, pod_code) AS DocDO"), function($do){
+                    $do->on('DocDO.po_code','=','document.purchase_order_detail.po_code');
+                    $do->on('DocDO.pod_code','=','document.purchase_order_detail.pod_code');
+                    $do->on('DocDO.main_stock_code','=','document.purchase_order_detail.main_stock_code');
                 })
                 ->where('document.purchase_order_detail.po_code',$id)->get();
         return response()->json(Api::response(true,"Sukses",$data),200);

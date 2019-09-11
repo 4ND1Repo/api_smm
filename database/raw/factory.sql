@@ -133,6 +133,7 @@ GO
 CREATE TABLE [document].[delivery_order](
 	[do_code] [varchar](20) NOT NULL,
 	[po_code] [varchar](20) NOT NULL,
+	[pod_code] [varchar](20) NOT NULL,
 	[page_code] [varchar](20) NOT NULL,
 	[main_stock_code] [varchar](20) NOT NULL,
 	[do_qty] [decimal](20,2) NOT NULL,

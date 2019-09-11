@@ -38,15 +38,28 @@ class PoController extends Controller
         return date("Y-m-d H:i:s");
     }
 
+    private function _generate_prefix_pod(){
+        $prefix = "POD".date("ym");
+        $SP = PODetail::select('pod_code')->where('pod_code','LIKE',$prefix.'%')->orderBy('pod_code', 'DESC')->get();
+        if($SP->count() > 0){
+            $SP = $SP->first();
+            $tmp = explode($prefix, $SP->pod_code);
+            $count = ((int)$tmp[1])+1;
+        } else
+            $count = 1;
+
+        return $prefix.sprintf("%05d",$count);
+    }
+
     public function process(Request $r){
         $date = date('Y-m-d H:i:s');
         foreach ($r->data as $po_code => $row) {
           $finish = 0;
           $cnt = count($row);
-          foreach ($row as $main_stock_code => $data) {
+          foreach ($row as $pod_code => $data) {
               $update = [];
               $qty = PODetail::where([
-                  'main_stock_code' => $main_stock_code,
+                  'pod_code' => $pod_code,
                   'po_code' => $po_code
               ])->first();
 
@@ -71,14 +84,39 @@ class PoController extends Controller
                 $update['po_qty'] = $data['qty'];
               }
 
+                // begin:generate if user split item
+              if(isset($data['new'])){
+                foreach($data['new'] AS $i => $new_row){
+                    $pod = new PODetail;
+                    $pod->pod_code = $this->_generate_prefix_pod();
+                    $pod->main_stock_code = $qty->main_stock_code;
+                    $pod->po_code = $po_code;
+                    $pod->po_qty = (!empty($new_row['qty'])?(float)$new_row['qty']:0);
+                    if(!empty($new_row['date'])){
+                        $tmp = explode('/',$new_row['date']);
+                        $pod->po_date_delivery = $tmp[2]."-".$tmp[1]."-".$tmp[0];
+                    }
+                    if(!empty($new_row['supplier'])){
+                        $tmp = explode(' - ',$new_row['supplier']);
+                        $pod->supplier_code = $tmp[0];
+                    }
+                    $pod->stock_price = !empty($new_row['price'])?(float)$new_row['price']:0;
+                    $pod->po_notes = $qty->po_notes;
+                    $pod->urgent = $qty->urgent;
+                    $pod->save();
+                }
+              }
+              // end:generate if user split item
+
               if(PODetail::where([
-                  'main_stock_code' => $main_stock_code,
+                  'pod_code' => $pod_code,
                   'po_code' => $po_code
               ])->update($update)){
                 if(!empty($data['date'])){
                   PO::where(['po_code' => $po_code])->update(['status' => 'ST02']);
                 }
-                $q = Delivery::selectRaw("SUM(do_qty) as qty")->where(['main_stock_code' => $main_stock_code, 'po_code' => $po_code])->groupBy('main_stock_code');
+                // check qty in after DO Receive
+                $q = Delivery::selectRaw("SUM(do_qty) as qty")->where(['pod_code' => $pod_code])->groupBy('pod_code');
                 if($q->count() > 0){
                   $tmp = $q->first();
                   if($data['qty'] <= $tmp->qty)
