@@ -513,7 +513,8 @@ INSERT INTO [master].[master_menu](id_menu, menu_name, menu_url,menu_icon,id_par
 (26, 'Riwayat Aktifitas', '/mng/activity', 'fa fa-history', 21),
 (27, 'Harga', '/stk/pricing', 'fa fa-money-bill', 15),
 (28, 'Kota', '/mst/city', 'fa fa-building', 9),
-(29, 'Barcode', '/stk/barcode', 'fa fa-barcode', 15)
+(29, 'Barcode', '/stk/barcode', 'fa fa-barcode', 15),
+(30, 'Print(PO)', '/req/print_po', 'fa fa-print', 2)
 GO
 INSERT INTO [master].[master_company](company_code,company_name) VALUES
 ('CP01','Sarana Makin Mulia, PT.')
@@ -570,6 +571,7 @@ INSERT INTO [account].[user_menu](group_code, id_menu, "add", "edit", "del") VAL
 ('USGP004', 15, 1, 1, 1),
 ('USGP004', 27, 1, 1, 1),
 ('USGP004', 28, 1, 1, 1),
+('USGP004', 30, 1, 1, 1),
 ('USGP005', 1, 1, 1, 1),
 ('USGP005', 2, 1, 1, 1),
 ('USGP005', 4, 1, 1, 1),

@@ -488,6 +488,179 @@ class PoController extends Controller
         return response()->json($data,200);
     }
 
+    public function print_get(Request $r){
+        // collect data from post
+        $input = $r->input();
+
+        $column_search = [
+            'document.purchase_order_detail.po_code',
+            'document.purchase_order_detail.po_notes',
+            'document.purchase_order.po_date',
+            'stock.stock_name',
+            'stock.stock_spec',
+        ];
+
+        // generate default
+        if(!isset($input['sort']))
+            $input['sort'] = array(
+                'sort' => 'desc',
+                'field' => 'document.purchase_order.po_date'
+            );
+        else {
+          if($input['sort']['field'] == 'po_code') $input['sort']['field'] = 'document.purchase_order_detail.po_code';
+        }
+
+        // whole query
+        $sup = PODetail::selectRaw('ROW_NUMBER() OVER(ORDER BY '.$input['sort']['field'].' '.$input['sort']['sort'].') as id, document.purchase_order_detail.po_code, document.purchase_order_detail.po_qty, document.purchase_order_detail.po_notes, document.purchase_order.po_date, stock.stock_spec, stock.stock_name')
+        ->join('document.purchase_order', 'document.purchase_order.po_code', '=', 'document.purchase_order_detail.po_code')
+        ->join(DB::raw("(
+            SELECT stock.stock.main_stock_code, master.master_stock.stock_name, CONCAT(
+                CASE WHEN master.master_stock.stock_size IS NOT NULL THEN master.master_stock.stock_size ELSE '' END,
+                CASE WHEN master.master_stock.stock_type IS NOT NULL THEN master.master_stock.stock_type ELSE '' END,
+                CASE WHEN master.master_stock.stock_brand IS NOT NULL THEN master.master_stock.stock_brand ELSE '' END,
+                CASE WHEN master.master_stock.stock_color IS NOT NULL THEN master.master_stock.stock_color ELSE '' END
+            ) AS stock_spec FROM stock.stock
+            JOIN master.master_stock ON master.master_stock.stock_code = stock.stock.stock_code
+        ) AS stock"),'stock.main_stock_code', '=', 'document.purchase_order_detail.main_stock_code')
+        ->where(['document.purchase_order.page_code_destination' => $input['page_code']])
+        ->whereRaw("document.purchase_order_detail.supplier_code IS NOT NULL AND document.purchase_order_detail.po_date_delivery IS NOT NULL AND document.purchase_order_detail.stock_price <> 0")
+        ->whereIn('document.purchase_order.status', ['ST02']);
+
+        // condition for date range
+        if(isset($input['query']['start_date']))
+            $sup->whereRaw("document.purchase_order.po_date >= '".$input['query']['start_date']." 00:00:00'");
+        if(isset($input['query']['end_date']))
+            $sup->whereRaw("document.purchase_order.po_date <= '".$input['query']['end_date']." 23:59:59'");
+
+        // where condition
+        if(isset($input['query'])){
+            if(!is_null($input['query']) and !empty($input['query'])){
+                foreach($input['query'] as $field => $val){
+                    if(in_array($field, array('supplier_code')))
+                        $sup->where("document.purchase_order_detail.".$field,($val=="null"?NULL:$val));
+                    else if($field == 'find'){
+                        if(!empty($val)){
+                            $sup->where(function($sup) use($column_search,$val){
+                                foreach($column_search as $row)
+                                    $sup->orWhere($row,'like',(in_array($row,['master.master_stock.stock_name','master.master_stock.stock_brand','master.master_stock.stock_size'])?"":"%").$val."%");
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        $sup->orderBy($input['sort']['field'],$input['sort']['sort']);
+
+        $data = $sup->get();
+
+        return response()->json($data,200);
+    }
+
+    public function print_grid(Request $r){
+        // collect data from post
+        $input = $r->input();
+
+        $column_search = [
+            'document.purchase_order_detail.po_code',
+            'document.purchase_order_detail.po_notes',
+            'document.purchase_order.po_date',
+            'stock.stock_name',
+            'stock.stock_spec',
+        ];
+
+        // generate default
+        if(!isset($input['sort']))
+            $input['sort'] = array(
+                'sort' => 'desc',
+                'field' => 'document.purchase_order.po_date'
+            );
+        else {
+          if($input['sort']['field'] == 'po_code') $input['sort']['field'] = 'document.purchase_order_detail.po_code';
+        }
+
+        // whole query
+        $sup = PODetail::selectRaw('ROW_NUMBER() OVER(ORDER BY '.$input['sort']['field'].' '.$input['sort']['sort'].') as id, document.purchase_order_detail.po_code, document.purchase_order_detail.po_qty, document.purchase_order_detail.po_notes, document.purchase_order.po_date, stock.stock_spec, stock.stock_name')
+        ->join('document.purchase_order', 'document.purchase_order.po_code', '=', 'document.purchase_order_detail.po_code')
+        ->join(DB::raw("(
+            SELECT stock.stock.main_stock_code, master.master_stock.stock_name, CONCAT(
+                CASE WHEN master.master_stock.stock_size IS NOT NULL THEN master.master_stock.stock_size ELSE '' END,
+                CASE WHEN master.master_stock.stock_type IS NOT NULL THEN master.master_stock.stock_type ELSE '' END,
+                CASE WHEN master.master_stock.stock_brand IS NOT NULL THEN master.master_stock.stock_brand ELSE '' END,
+                CASE WHEN master.master_stock.stock_color IS NOT NULL THEN master.master_stock.stock_color ELSE '' END
+            ) AS stock_spec FROM stock.stock
+            JOIN master.master_stock ON master.master_stock.stock_code = stock.stock.stock_code
+        ) AS stock"),'stock.main_stock_code', '=', 'document.purchase_order_detail.main_stock_code')
+        ->where(['document.purchase_order.page_code_destination' => $input['page_code']])
+        ->whereRaw("document.purchase_order_detail.supplier_code IS NOT NULL AND document.purchase_order_detail.po_date_delivery IS NOT NULL AND document.purchase_order_detail.stock_price <> 0")
+        ->whereIn('document.purchase_order.status', ['ST02']);
+
+        // condition for date range
+        if(isset($input['query']['start_date']))
+            $sup->whereRaw("document.purchase_order.po_date >= '".$input['query']['start_date']." 00:00:00'");
+        if(isset($input['query']['end_date']))
+            $sup->whereRaw("document.purchase_order.po_date <= '".$input['query']['end_date']." 23:59:59'");
+
+        // where condition
+        if(isset($input['query'])){
+            if(!is_null($input['query']) and !empty($input['query'])){
+                foreach($input['query'] as $field => $val){
+                    if(in_array($field, array('supplier_code')))
+                        $sup->where("document.purchase_order_detail.".$field,($val=="null"?NULL:$val));
+                    else if($field == 'find'){
+                        if(!empty($val)){
+                            $sup->where(function($sup) use($column_search,$val){
+                                foreach($column_search as $row)
+                                    $sup->orWhere($row,'like',(in_array($row,['master.master_stock.stock_name','master.master_stock.stock_brand','master.master_stock.stock_size'])?"":"%").$val."%");
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        // $sup->where();
+        $count_all = $sup->count();
+        // get total page from count all
+        $pages = (!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))? ceil($count_all/$input['pagination']['perpage']):1;
+
+        $sup->orderBy($input['sort']['field'],$input['sort']['sort']);
+
+        // skipping for next page
+        $skip = (!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))?($input['pagination']['page']-1)*$input['pagination']['perpage']:0;
+        $sup->skip($skip);
+        if(!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))
+            $sup->take($input['pagination']['perpage']);
+
+        $row = $sup->get();
+        $data = [
+            "meta"=> [
+                "page"=> $input['pagination']['page'],
+                "pages"=> $pages,
+                "perpage"=> (!empty($input['pagination']['perpage']) && !is_null($input['pagination']['perpage']))?$input['pagination']['perpage']:-1,
+                "total"=> $count_all,
+                "sort"=> $input['sort']['sort'],
+                "field"=> $input['sort']['field']
+            ],
+            "data"=> $row
+        ];
+
+        return response()->json($data,200);
+    }
+
+    public function supplier_process(Request $r){
+        $q = PODetail::select('document.purchase_order_detail.supplier_code', 'supplier_name')
+        ->join('document.purchase_order', 'document.purchase_order.po_code', '=', 'document.purchase_order_detail.po_code')
+        ->join('master.master_supplier', 'master.master_supplier.supplier_code', '=', 'document.purchase_order_detail.supplier_code')
+        ->where(['document.purchase_order.status' => 'ST02'])->groupBy(['document.purchase_order_detail.supplier_code', 'master.master_supplier.supplier_name']);
+        if($q->count() > 0){
+            $data = $q->get();
+            return response()->json(Api::response(true,"Sukses",$data),200);
+        }
+
+        return response()->json(Api::response(false,"Gagal"),200);
+    }
+
     public function supplier(Request $r){
         $q = PODetail::select('supplier_code')->where(['po_code' => $r->po_code])->groupBy(['supplier_code']);
         if($q->count() > 0){

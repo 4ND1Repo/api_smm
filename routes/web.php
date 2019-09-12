@@ -240,11 +240,20 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
                 $router->post('print_data', 'Purchasing\PoController@print_data');
                 $router->post('get', 'Purchasing\PoController@get');
                 $router->post('grid', 'Purchasing\PoController@grid');
-                $router->post('supplier', 'Purchasing\PoController@supplier');
+                // supplier group
+                $router->group(['prefix' => 'supplier'], function() use($router){
+                    $router->post('/', 'Purchasing\PoController@supplier');
+                    $router->post('process', 'Purchasing\PoController@supplier_process');
+                });
                 // history group
                 $router->group(['prefix' => 'history'], function() use($router){
                   $router->post('get', 'Purchasing\PoController@history_get');
                   $router->post('grid', 'Purchasing\PoController@history_grid');
+                });
+                // print group
+                $router->group(['prefix' => 'print'], function() use($router){
+                  $router->post('get', 'Purchasing\PoController@print_get');
+                  $router->post('grid', 'Purchasing\PoController@print_grid');
                 });
             });
             // Delivery Order group
