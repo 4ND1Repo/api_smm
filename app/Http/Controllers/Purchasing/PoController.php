@@ -514,10 +514,10 @@ class PoController extends Controller
         $sup = PODetail::selectRaw('ROW_NUMBER() OVER(ORDER BY '.$input['sort']['field'].' '.$input['sort']['sort'].') as id, document.purchase_order_detail.po_code, document.purchase_order_detail.po_qty, document.purchase_order_detail.po_notes, document.purchase_order.po_date, stock.stock_spec, stock.stock_name')
         ->join('document.purchase_order', 'document.purchase_order.po_code', '=', 'document.purchase_order_detail.po_code')
         ->join(DB::raw("(
-            SELECT stock.stock.main_stock_code, master.master_stock.stock_name, CONCAT(
-                CASE WHEN master.master_stock.stock_size IS NOT NULL THEN master.master_stock.stock_size ELSE '' END,
-                CASE WHEN master.master_stock.stock_type IS NOT NULL THEN master.master_stock.stock_type ELSE '' END,
-                CASE WHEN master.master_stock.stock_brand IS NOT NULL THEN master.master_stock.stock_brand ELSE '' END,
+            SELECT stock.stock.main_stock_code, master.master_stock.stock_name, (
+                CASE WHEN master.master_stock.stock_size IS NOT NULL THEN master.master_stock.stock_size ELSE '' END +
+                CASE WHEN master.master_stock.stock_type IS NOT NULL THEN master.master_stock.stock_type ELSE '' END +
+                CASE WHEN master.master_stock.stock_brand IS NOT NULL THEN master.master_stock.stock_brand ELSE '' END +
                 CASE WHEN master.master_stock.stock_color IS NOT NULL THEN master.master_stock.stock_color ELSE '' END
             ) AS stock_spec FROM stock.stock
             JOIN master.master_stock ON master.master_stock.stock_code = stock.stock.stock_code
@@ -583,10 +583,10 @@ class PoController extends Controller
         $sup = PODetail::selectRaw('ROW_NUMBER() OVER(ORDER BY '.$input['sort']['field'].' '.$input['sort']['sort'].') as id, document.purchase_order_detail.po_code, document.purchase_order_detail.po_qty, document.purchase_order_detail.po_notes, document.purchase_order.po_date, stock.stock_spec, stock.stock_name')
         ->join('document.purchase_order', 'document.purchase_order.po_code', '=', 'document.purchase_order_detail.po_code')
         ->join(DB::raw("(
-            SELECT stock.stock.main_stock_code, master.master_stock.stock_name, CONCAT(
-                CASE WHEN master.master_stock.stock_size IS NOT NULL THEN master.master_stock.stock_size ELSE '' END,
-                CASE WHEN master.master_stock.stock_type IS NOT NULL THEN master.master_stock.stock_type ELSE '' END,
-                CASE WHEN master.master_stock.stock_brand IS NOT NULL THEN master.master_stock.stock_brand ELSE '' END,
+            SELECT stock.stock.main_stock_code, master.master_stock.stock_name, (
+                CASE WHEN master.master_stock.stock_size IS NOT NULL THEN master.master_stock.stock_size ELSE '' END +
+                CASE WHEN master.master_stock.stock_type IS NOT NULL THEN master.master_stock.stock_type ELSE '' END +
+                CASE WHEN master.master_stock.stock_brand IS NOT NULL THEN master.master_stock.stock_brand ELSE '' END +
                 CASE WHEN master.master_stock.stock_color IS NOT NULL THEN master.master_stock.stock_color ELSE '' END
             ) AS stock_spec FROM stock.stock
             JOIN master.master_stock ON master.master_stock.stock_code = stock.stock.stock_code
