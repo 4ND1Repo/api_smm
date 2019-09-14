@@ -396,6 +396,15 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
             $router->post('stock', 'Warehouse\StockController@import');
             $router->post('qty', 'Warehouse\QtyController@import');
         });
+
+        // for Report Group
+        $router->group(['prefix' => 'rep'], function() use($router){
+            // for Stock report group
+            $router->group(['prefix' => 'stock'], function() use($router){
+                $router->post('/', 'Warehouse\StockController@report_grid');
+                $router->post('detail', 'Warehouse\StockController@detail_report_grid');
+            });
+        });
     });
 
 
