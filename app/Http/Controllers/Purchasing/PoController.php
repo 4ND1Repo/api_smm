@@ -84,6 +84,9 @@ class PoController extends Controller
                 $update['po_qty'] = $data['qty'];
               }
 
+              if(isset($data['pic']))
+                $update['po_pic'] = $data['pic'];
+
                 // begin:generate if user split item
               if(isset($data['new'])){
                 foreach($data['new'] AS $i => $new_row){
@@ -91,6 +94,8 @@ class PoController extends Controller
                     $pod->pod_code = $this->_generate_prefix_pod();
                     $pod->main_stock_code = $qty->main_stock_code;
                     $pod->po_code = $po_code;
+                    if(isset($new_row['pic']))
+                        $pod->po_pic = $new_row['pic'];
                     $pod->po_qty = (!empty($new_row['qty'])?(float)$new_row['qty']:0);
                     if(!empty($new_row['date'])){
                         $tmp = explode('/',$new_row['date']);
