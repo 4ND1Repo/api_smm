@@ -136,7 +136,7 @@ class CabinetController extends Controller
     public function tree_child(Request $r){
         $data = [];
 
-        $cb = Cabinet::where(['parent_cabinet_code' => $r->parent, 'is_child' => 1])->orderBy('cabinet_name','DESC')->get();
+        $cb = Cabinet::where(['parent_cabinet_code' => $r->parent, 'is_child' => 1])->orderBy('cabinet_name','ASC')->get();
         if($cb->count() > 0){
             $chunk = $cb->toArray();
             $data = array_chunk($chunk,$r->cnt);
