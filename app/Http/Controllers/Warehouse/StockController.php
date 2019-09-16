@@ -189,8 +189,8 @@ class StockController extends Controller
     public function autocomplete(Request $r){
         $return = [];
         // $stock = Stock::join('master.master_stock','master.master_stock.stock_code','=','stock.stock.stock_code');
-        $stock = DB::select(DB::raw("SELECT * FROM (
-            SELECT stock.stock.main_stock_code, (master.master_stock.stock_code + ' - ' + master.master_stock.stock_name + ' - ' + master.master_stock.stock_type + ' - ' + master.master_stock.stock_size + ' - ' + master.master_stock.stock_brand + ' - ' + master.master_measure.measure_type) as stock_find,
+        $stock = DB::select(DB::raw("SELECT TOP 10 * FROM (
+            SELECT stock.stock.main_stock_code, ('(' + master.master_stock.stock_code + ') ' + master.master_stock.stock_name + (CASE WHEN master.master_stock.stock_size IS NOT NULL THEN ' ' + master.master_stock.stock_size ELSE '' END) + (CASE WHEN master.master_stock.stock_type IS NOT NULL THEN ' ' + master.master_stock.stock_type ELSE '' END) + (CASE WHEN master.master_stock.stock_brand IS NOT NULL THEN ' ' + master.master_stock.stock_brand ELSE '' END) + (CASE WHEN master.master_stock.stock_color IS NOT NULL THEN ' ' + master.master_stock.stock_color ELSE '' END)) as stock_find,
             (SELECT SUM(rqd.req_tools_qty) as qty FROM document.request_tools_detail rqd JOIN document.request_tools rq ON rq.req_tools_code = rqd.req_tools_code WHERE rqd.stock_code = master.master_stock.stock_code AND rq.page_code='".$r->page_code."' AND rqd.fullfillment=0 GROUP BY rqd.stock_code, rq.page_code, rqd.fullfillment) as need_qty,
             master.master_stock.*,
             CASE WHEN stock_qty.qty IS NOT NULL THEN stock_qty.qty ELSE 0 END AS qty,
