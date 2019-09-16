@@ -402,7 +402,9 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
             // for Stock report group
             $router->group(['prefix' => 'stock'], function() use($router){
                 $router->post('/', 'Warehouse\StockController@report_grid');
+                $router->post('/get', 'Warehouse\StockController@report_get');
                 $router->post('detail', 'Warehouse\StockController@detail_report_grid');
+                $router->post('detail/get', 'Warehouse\StockController@detail_report_get');
             });
         });
     });

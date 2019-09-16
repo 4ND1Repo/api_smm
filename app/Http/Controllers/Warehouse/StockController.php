@@ -814,6 +814,112 @@ class StockController extends Controller
         return response()->json(Api::response(true, 'sukses'),200);
     }
 
+    public function report_get(Request $r){
+        // collect data from post
+        $input = $r->input();
+
+        $column_search = [
+            'stock.stock.stock_code',
+            'master.master_stock.stock_name',
+            'master.master_stock.stock_size',
+            'master.master_stock.stock_brand',
+            'master.master_stock.stock_type',
+            'master.master_stock.stock_color'
+        ];
+
+        // generate default
+        if(!isset($input['sort']))
+            $input['sort'] = array(
+                'sort' => 'asc',
+                'field' => 'stock_name'
+            );
+        
+        // date filter
+        if(isset($input['query']['start_date'])) $start_date = $input['query']['start_date'];
+        if(isset($input['query']['end_date'])){
+            $end_date = $input['query']['end_date'];
+            if(!isset($start_date))
+                $start_date = $end_date;
+        }
+        if(!isset($end_date) && isset($input['query']['start_date'])) $end_date = $start_date;
+
+        // whole query
+        $sup = Stock::selectRaw('master.master_stock.*, stock.stock.main_stock_code,
+            (CASE WHEN stock_in.stock_qty IS NOT NULL THEN stock_in.stock_qty ELSE 0 END) AS first_qty,
+            (CASE WHEN stock_in_current.stock_qty IS NOT NULL THEN stock_in_current.stock_qty ELSE 0 END) AS in_qty,
+            (CASE WHEN stock_out_current.stock_qty IS NOT NULL THEN stock_out_current.stock_qty ELSE 0 END) AS out_qty,
+            ((CASE WHEN stock_in.stock_qty IS NOT NULL THEN stock_in.stock_qty ELSE 0 END + CASE WHEN stock_in_current.stock_qty IS NOT NULL THEN stock_in_current.stock_qty ELSE 0 END) - CASE WHEN stock_out_current.stock_qty IS NOT NULL THEN stock_out_current.stock_qty ELSE 0 END) AS current_qty,
+            master.master_measure.measure_type
+        ')
+        ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code')
+        ->join('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
+        ->leftJoin(DB::raw("(
+                SELECT tmp_all_child.main_stock_code, ".(isset($start_date)?"(tmp_all_child.stock_qty - CASE WHEN tmp_all_diff.stock_qty IS NOT NULL THEN tmp_all_diff.stock_qty ELSE 0 END)":"CAST(0 AS DECIMAL(20,2))")." AS stock_qty FROM(
+                    SELECT main_stock_code, sum(stock_qty) AS stock_qty FROM (
+                        SELECT main_stock_code, SUM(qty) AS stock_qty FROM stock.qty ".(isset($start_date)?"WHERE stock_date < '".$start_date." 00:00:00'":"")." GROUP BY main_stock_code
+                        UNION ALL
+                        SELECT main_stock_code, SUM(qty) AS stock_qty FROM stock.qty_out ".(isset($start_date)?"WHERE stock_date < '".$start_date." 00:00:00'":"")." GROUP BY main_stock_code
+                    ) AS tmp_all_children GROUP BY main_stock_code
+                ) AS tmp_all_child
+                LEFT JOIN (
+                    SELECT main_stock_code, SUM(qty) AS stock_qty FROM stock.qty_out ".(isset($start_date)?"WHERE stock_date < '".$start_date." 00:00:00' AND stock_out_date < '".$start_date." 00:00:00'":"")." GROUP BY main_stock_code
+                ) AS tmp_all_diff ON tmp_all_diff.main_stock_code = tmp_all_child.main_stock_code
+            ) AS stock_in"), function($on) use($input){
+            $on->on('stock_in.main_stock_code', '=', 'stock.stock.main_stock_code');
+        })
+        ->leftJoin(DB::raw("(SELECT main_stock_code, SUM(qty) AS stock_qty FROM stock.qty_out ".(isset($start_date)?"WHERE stock_out_date < '".$start_date." 00:00:00'":"")." GROUP BY main_stock_code) AS stock_out"), function($on) use($input){
+            $on->on('stock_out.main_stock_code', '=', 'stock.stock.main_stock_code');
+        })
+        ->leftJoin(DB::raw("(SELECT main_stock_code, SUM(stock_qty) AS stock_qty FROM (
+            SELECT main_stock_code, SUM(qty) AS stock_qty FROM stock.qty ".(isset($start_date)?"WHERE stock_date BETWEEN '".$start_date." 00:00:00' AND '".$end_date." 23:59:59'":"")." GROUP BY main_stock_code
+            UNION ALL
+            SELECT main_stock_code, SUM(qty) AS stock_qty FROM stock.qty_out ".(isset($start_date)?"WHERE stock_date BETWEEN '".$start_date." 00:00:00' AND '".$end_date." 23:59:59'":"")." GROUP BY main_stock_code
+            ) AS tmp_in_table GROUP BY main_stock_code
+        ) AS stock_in_current"), function($on) use($input){
+            $on->on('stock_in_current.main_stock_code', '=', 'stock.stock.main_stock_code');
+        })
+        ->leftJoin(DB::raw("(SELECT main_stock_code, SUM(qty) AS stock_qty FROM stock.qty_out ".(isset($start_date)?"WHERE stock_out_date BETWEEN '".$start_date." 00:00:00' AND '".$end_date." 23:59:59'":"")." GROUP BY main_stock_code) AS stock_out_current"), function($on) use($input){
+            $on->on('stock_out_current.main_stock_code', '=', 'stock.stock.main_stock_code');
+        })
+        ->where(['stock.stock.page_code' => $input['page_code']]);
+
+        if(isset($start_date)){
+            $sup->whereRaw(DB::raw("
+                stock.stock.main_stock_code IN(
+                    SELECT main_stock_code FROM (
+                        SELECT main_stock_code FROM stock.qty WHERE stock_date BETWEEN '".$start_date." 00:00:00' AND '".$end_date." 23:59:59' GROUP BY main_stock_code
+                        UNION ALL
+                        SELECT main_stock_code FROM stock.qty_out WHERE stock_out_date BETWEEN '".$start_date." 00:00:00' AND '".$end_date." 23:59:59' GROUP BY main_stock_code
+                    ) AS tmp_table GROUP BY main_stock_code
+                )
+            "));
+        }
+
+        // where condition
+        if(isset($input['query'])){
+            if(!is_null($input['query']) and !empty($input['query'])){
+                foreach($input['query'] as $field => $val){
+                    if(in_array($field, array('measure_code','stock_brand','stock_size','stock_type','stock_color')))
+                        $sup->where("master.master_stock.".$field,($val=="null"?NULL:urldecode($val)));
+                    else if($field == 'find'){
+                        if(!empty($val)){
+                            $sup->where(function($sup) use($column_search,$val){
+                                foreach($column_search as $row)
+                                    $sup->orWhere($row,'like',(in_array($row,['master.master_stock.stock_name'])?"":"%").$val."%");
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        $sup->orderBy($input['sort']['field'],$input['sort']['sort']);
+
+        $data = $sup->get();
+
+        return response()->json($data,200);
+    }
+
     public function report_grid(Request $r){
         // collect data from post
         $input = $r->input();
@@ -844,7 +950,7 @@ class StockController extends Controller
         if(!isset($end_date) && isset($input['query']['start_date'])) $end_date = $start_date;
 
         // whole query
-        $sup = Stock::selectRaw('master.master_stock.*, 
+        $sup = Stock::selectRaw('master.master_stock.*, stock.stock.main_stock_code,
             (CASE WHEN stock_in.stock_qty IS NOT NULL THEN stock_in.stock_qty ELSE 0 END) AS first_qty,
             (CASE WHEN stock_in_current.stock_qty IS NOT NULL THEN stock_in_current.stock_qty ELSE 0 END) AS in_qty,
             (CASE WHEN stock_out_current.stock_qty IS NOT NULL THEN stock_out_current.stock_qty ELSE 0 END) AS out_qty,
@@ -942,6 +1048,109 @@ class StockController extends Controller
         return response()->json($data,200);
     }
 
+    public function detail_report_get(Request $r){
+        // collect data from post
+        $input = $r->input();
+
+        $column_search = [
+            'master.master_stock.stock_code',
+            'master.master_stock.stock_name',
+            'master.master_stock.stock_size',
+            'master.master_stock.stock_brand',
+            'master.master_stock.stock_type',
+            'master.master_stock.stock_color'
+        ];
+
+        // generate default
+        if(!isset($input['sort']))
+            $input['sort'] = array(
+                'sort' => 'asc',
+                'field' => 'stock_name'
+            );
+        
+        // date filter
+        if(isset($input['query']['start_date'])) $start_date = $input['query']['start_date'];
+        if(isset($input['query']['end_date'])){
+            $end_date = $input['query']['end_date'];
+            if(!isset($start_date))
+                $start_date = $end_date;
+        }
+        if(!isset($end_date) && isset($input['query']['start_date'])) $end_date = $start_date;
+
+        // whole query
+        $sup = Stock::selectRaw('master.master_stock.*, 
+            stock_detail.*,
+            master.master_measure.measure_type
+        ')
+        ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code')
+        ->join('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
+        ->join(DB::raw("(SELECT 
+                stock_date,
+                main_stock_code,
+                CASE WHEN first_qty IS NOT NULL THEN first_qty ELSE 0 END AS first_qty,
+                qty_in,
+                qty_out,
+                ((CASE WHEN first_qty IS NOT NULL THEN first_qty ELSE 0 END + qty_in) - qty_out) AS current_qty
+            FROM (
+                SELECT main_stock_code, stock_date, (
+                    SELECT SUM(qty_in)-SUM(qty_out) FROM(
+                        SELECT main_stock_code, stock_date, SUM(first_qty) AS first_qty, SUM(qty_in) AS qty_in, SUM(qty_out) AS qty_out FROM (
+                            SELECT main_stock_code, CAST(stock_date AS DATE) AS stock_date, 0 AS first_qty, SUM(qty) AS qty_in, 0 AS qty_out FROM stock.qty GROUP BY main_stock_code, CAST(stock_date AS DATE)
+                            UNION ALL
+                            SELECT main_stock_code, CAST(stock_date AS DATE) AS stock_date, 0 AS first_qty, SUM(qty) AS qty_in, 0 AS qty_out FROM stock.qty_out GROUP BY main_stock_code, CAST(stock_date AS DATE)
+                            UNION ALL
+                            SELECT main_stock_code, CAST(stock_out_date AS DATE) AS stock_date, 0 AS first_qty, 0 AS qty_in, SUM(qty) AS qty_out FROM stock.qty_out GROUP BY main_stock_code, CAST(stock_out_date AS DATE)
+                        ) AS tmp_in_out_detail GROUP BY main_stock_code, stock_date
+                    ) AS tmp_in_out WHERE stock_date < stock_in_out.stock_date AND main_stock_code = stock_in_out.main_stock_code
+                ) AS first_qty, qty_in, qty_out FROM (
+                    SELECT main_stock_code, stock_date, SUM(first_qty) AS first_qty, SUM(qty_in) AS qty_in, SUM(qty_out) AS qty_out FROM (
+                        SELECT main_stock_code, CAST(stock_date AS DATE) AS stock_date, 0 AS first_qty, SUM(qty) AS qty_in, 0 AS qty_out FROM stock.qty GROUP BY main_stock_code, CAST(stock_date AS DATE)
+                        UNION ALL
+                        SELECT main_stock_code, CAST(stock_date AS DATE) AS stock_date, 0 AS first_qty, SUM(qty) AS qty_in, 0 AS qty_out FROM stock.qty_out GROUP BY main_stock_code, CAST(stock_date AS DATE)
+                        UNION ALL
+                        SELECT main_stock_code, CAST(stock_out_date AS DATE) AS stock_date, 0 AS first_qty, 0 AS qty_in, SUM(qty) AS qty_out FROM stock.qty_out GROUP BY main_stock_code, CAST(stock_out_date AS DATE)
+                    ) AS stock_in GROUP BY main_stock_code, stock_date
+                ) AS stock_in_out
+        ) AS tmp_detail) AS stock_detail"), function($on) use($input){
+            $on->on('stock_detail.main_stock_code', '=', 'stock.stock.main_stock_code');
+        })
+        ->where([
+            'stock.stock.page_code' => $input['page_code'],
+            'stock.stock.main_stock_code' => $input['main_stock_code']
+        ]);
+
+        if(isset($start_date)){
+            $sup->whereRaw(DB::raw("
+                stock_detail.stock_date BETWEEN '".$start_date."' AND '".$end_date."'
+            "));
+        }
+        // dd($sup->toSql());
+
+        // where condition
+        if(isset($input['query'])){
+            if(!is_null($input['query']) and !empty($input['query'])){
+                foreach($input['query'] as $field => $val){
+                    if(in_array($field, array('measure_code','stock_brand','stock_size','stock_type','stock_color')))
+                        $sup->where("master.master_stock.".$field,($val=="null"?NULL:urldecode($val)));
+                    else if($field == 'find'){
+                        if(!empty($val)){
+                            $sup->where(function($sup) use($column_search,$val){
+                                foreach($column_search as $row)
+                                    $sup->orWhere($row,'like',(in_array($row,['master.master_stock.stock_name'])?"":"%").$val."%");
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        $sup->orderBy($input['sort']['field'],$input['sort']['sort']);
+
+        $data = $sup->get();
+
+        return response()->json($data,200);
+    }
+
     public function detail_report_grid(Request $r){
         // collect data from post
         $input = $r->input();
@@ -1009,7 +1218,8 @@ class StockController extends Controller
             $on->on('stock_detail.main_stock_code', '=', 'stock.stock.main_stock_code');
         })
         ->where([
-            'stock.stock.page_code' => $input['page_code']
+            'stock.stock.page_code' => $input['page_code'],
+            'stock.stock.main_stock_code' => $input['main_stock_code']
         ]);
 
         if(isset($start_date)){
