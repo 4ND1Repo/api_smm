@@ -148,7 +148,7 @@ class PoController extends Controller
     public function find($id){
         $data = [];
         $data['purchase_order'] = PO::where('po_code',$id)->first();
-        $data['purchase_order_detail'] = PODetail::selectRaw("master.master_stock.*, document.purchase_order_detail.*, FORMAT (document.purchase_order_detail.po_date_delivery, 'dd/MM/yyyy') AS po_date_delivery, (document.purchase_order_detail.po_qty - CASE WHEN DocDO.qty IS NULL THEN 0 ELSE DocDO.qty END) AS qty, master.master_supplier.supplier_name, master.master_measure.measure_type")
+        $data['purchase_order_detail'] = PODetail::selectRaw("master.master_stock.*, document.purchase_order_detail.*, convert(varchar, document.purchase_order_detail.po_date_delivery, 103) AS po_date_delivery, (document.purchase_order_detail.po_qty - CASE WHEN DocDO.qty IS NULL THEN 0 ELSE DocDO.qty END) AS qty, master.master_supplier.supplier_name, master.master_measure.measure_type")
                 ->join('stock.stock', 'stock.stock.main_stock_code', '=', 'document.purchase_order_detail.main_stock_code')
                 ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code')
                 ->join('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
@@ -356,7 +356,7 @@ class PoController extends Controller
         }
 
         // whole query
-        $sup = PODetail::selectRaw("document.purchase_order_detail.*, master.master_stock.*, FORMAT (po_date, 'dd/MM/yyyy') as po_date, document.purchase_order.status, finish_by, FORMAT (finish_date, 'dd/MM/yyyy') AS finish_date, document.delivery_order.do_code, document.delivery_order.do_qty, master.master_status.status_label, master.master_measure.measure_type")
+        $sup = PODetail::selectRaw("document.purchase_order_detail.*, master.master_stock.*, convert(varchar, po_date, 103) as po_date, document.purchase_order.status, finish_by, convert(varchar, finish_date, 103) AS finish_date, document.delivery_order.do_code, document.delivery_order.do_qty, master.master_status.status_label, master.master_measure.measure_type")
         ->join('document.purchase_order', 'document.purchase_order.po_code', '=', 'document.purchase_order_detail.po_code')
         ->leftJoin('document.delivery_order', function($query){
             $query->on('document.delivery_order.po_code', '=', 'document.purchase_order_detail.po_code');
@@ -426,7 +426,7 @@ class PoController extends Controller
         }
 
         // whole query
-        $sup = PODetail::selectRaw("document.purchase_order_detail.*, master.master_stock.*, FORMAT (po_date, 'dd/MM/yyyy') as po_date, document.purchase_order.status, finish_by, FORMAT (finish_date, 'dd/MM/yyyy') AS finish_date, document.delivery_order.do_code, document.delivery_order.do_qty, master.master_status.status_label, master.master_measure.measure_type")
+        $sup = PODetail::selectRaw("document.purchase_order_detail.*, master.master_stock.*, convert(varchar, po_date, 103) as po_date, document.purchase_order.status, finish_by, convert(varchar, finish_date, 103) AS finish_date, document.delivery_order.do_code, document.delivery_order.do_qty, master.master_status.status_label, master.master_measure.measure_type")
         ->join('document.purchase_order', 'document.purchase_order.po_code', '=', 'document.purchase_order_detail.po_code')
         ->leftJoin('document.delivery_order', function($query){
             $query->on('document.delivery_order.po_code', '=', 'document.purchase_order_detail.po_code');
