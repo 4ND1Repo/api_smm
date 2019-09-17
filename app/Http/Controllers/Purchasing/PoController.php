@@ -18,7 +18,7 @@ use App\Model\Document\PoDetailModel AS PODetail;
 
 // Embed a Helper
 use DB;
-use App\Helpers\{Api, Log};
+use App\Helpers\{Api, Log, Converter};
 use Illuminate\Http\Request;
 
 
@@ -70,8 +70,7 @@ class PoController extends Controller
                 $update['supplier_code'] = NULL;
 
               if(!empty($data['date'])){
-                $tmp = explode('/',$data['date']);
-                $update['po_date_delivery'] = $tmp[2]."-".$tmp[1]."-".$tmp[0];
+                $update['po_date_delivery'] = Converter::fromID($data['date']);
               } else
                 $update['po_date_delivery'] = NULL;
 
@@ -149,7 +148,7 @@ class PoController extends Controller
     public function find($id){
         $data = [];
         $data['purchase_order'] = PO::where('po_code',$id)->first();
-        $data['purchase_order_detail'] = PODetail::selectRaw('master.master_stock.*, document.purchase_order_detail.*, (document.purchase_order_detail.po_qty - CASE WHEN DocDO.qty IS NULL THEN 0 ELSE DocDO.qty END) AS qty, master.master_supplier.supplier_name, master.master_measure.measure_type')
+        $data['purchase_order_detail'] = PODetail::selectRaw("master.master_stock.*, document.purchase_order_detail.*, FORMAT (document.purchase_order_detail.po_date_delivery, 'dd/MM/yyyy') AS po_date_delivery, (document.purchase_order_detail.po_qty - CASE WHEN DocDO.qty IS NULL THEN 0 ELSE DocDO.qty END) AS qty, master.master_supplier.supplier_name, master.master_measure.measure_type")
                 ->join('stock.stock', 'stock.stock.main_stock_code', '=', 'document.purchase_order_detail.main_stock_code')
                 ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code')
                 ->join('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
@@ -224,9 +223,9 @@ class PoController extends Controller
 
         // condition for date range
         if(isset($input['query']['start_date']))
-            $sup->whereRaw("document.purchase_order.po_date >= '".$input['query']['start_date']." 00:00:00'");
+            $sup->whereRaw("document.purchase_order.po_date >= '".Converter::fromID($input['query']['start_date'])." 00:00:00'");
         if(isset($input['query']['end_date']))
-            $sup->whereRaw("document.purchase_order.po_date <= '".$input['query']['end_date']." 23:59:59'");
+            $sup->whereRaw("document.purchase_order.po_date <= '".Converter::fromID($input['query']['end_date'])." 23:59:59'");
 
         // where condition
         if(isset($input['query'])){
@@ -280,9 +279,9 @@ class PoController extends Controller
 
         // condition for date range
         if(isset($input['query']['start_date']))
-            $sup->whereRaw("document.purchase_order.po_date >= '".$input['query']['start_date']." 00:00:00'");
+            $sup->whereRaw("document.purchase_order.po_date >= '".Converter::fromID($input['query']['start_date'])." 00:00:00'");
         if(isset($input['query']['end_date']))
-            $sup->whereRaw("document.purchase_order.po_date <= '".$input['query']['end_date']." 23:59:59'");
+            $sup->whereRaw("document.purchase_order.po_date <= '".Converter::fromID($input['query']['end_date'])." 23:59:59'");
 
         // where condition
         if(isset($input['query'])){
@@ -357,7 +356,7 @@ class PoController extends Controller
         }
 
         // whole query
-        $sup = PODetail::selectRaw('document.purchase_order_detail.*, master.master_stock.*, po_date, document.purchase_order.status, finish_by, finish_date, document.delivery_order.do_code, document.delivery_order.do_qty, master.master_status.status_label, master.master_measure.measure_type')
+        $sup = PODetail::selectRaw("document.purchase_order_detail.*, master.master_stock.*, FORMAT (po_date, 'dd/MM/yyyy') as po_date, document.purchase_order.status, finish_by, FORMAT (finish_date, 'dd/MM/yyyy') AS finish_date, document.delivery_order.do_code, document.delivery_order.do_qty, master.master_status.status_label, master.master_measure.measure_type")
         ->join('document.purchase_order', 'document.purchase_order.po_code', '=', 'document.purchase_order_detail.po_code')
         ->leftJoin('document.delivery_order', function($query){
             $query->on('document.delivery_order.po_code', '=', 'document.purchase_order_detail.po_code');
@@ -372,9 +371,9 @@ class PoController extends Controller
 
         // condition for date range
         if(isset($input['query']['start_date']))
-            $sup->whereRaw("document.purchase_order.po_date >= '".$input['query']['start_date']." 00:00:00'");
+            $sup->whereRaw("document.purchase_order.po_date >= '".Converter::fromID($input['query']['start_date'])." 00:00:00'");
         if(isset($input['query']['end_date']))
-            $sup->whereRaw("document.purchase_order.po_date <= '".$input['query']['end_date']." 23:59:59'");
+            $sup->whereRaw("document.purchase_order.po_date <= '".Converter::fromID($input['query']['end_date'])." 23:59:59'");
 
         // where condition
         if(isset($input['query'])){
@@ -427,7 +426,7 @@ class PoController extends Controller
         }
 
         // whole query
-        $sup = PODetail::selectRaw('document.purchase_order_detail.*, master.master_stock.*, po_date, document.purchase_order.status, finish_by, finish_date, document.delivery_order.do_code, document.delivery_order.do_qty, master.master_status.status_label, master.master_measure.measure_type')
+        $sup = PODetail::selectRaw("document.purchase_order_detail.*, master.master_stock.*, FORMAT (po_date, 'dd/MM/yyyy') as po_date, document.purchase_order.status, finish_by, FORMAT (finish_date, 'dd/MM/yyyy') AS finish_date, document.delivery_order.do_code, document.delivery_order.do_qty, master.master_status.status_label, master.master_measure.measure_type")
         ->join('document.purchase_order', 'document.purchase_order.po_code', '=', 'document.purchase_order_detail.po_code')
         ->leftJoin('document.delivery_order', function($query){
             $query->on('document.delivery_order.po_code', '=', 'document.purchase_order_detail.po_code');
@@ -442,9 +441,9 @@ class PoController extends Controller
 
         // condition for date range
         if(isset($input['query']['start_date']))
-            $sup->whereRaw("document.purchase_order.po_date >= '".$input['query']['start_date']." 00:00:00'");
+            $sup->whereRaw("document.purchase_order.po_date >= '".Converter::fromID($input['query']['start_date'])." 00:00:00'");
         if(isset($input['query']['end_date']))
-            $sup->whereRaw("document.purchase_order.po_date <= '".$input['query']['end_date']." 23:59:59'");
+            $sup->whereRaw("document.purchase_order.po_date <= '".Converter::fromID($input['query']['end_date'])." 23:59:59'");
 
         // where condition
         if(isset($input['query'])){
@@ -533,9 +532,9 @@ class PoController extends Controller
 
         // condition for date range
         if(isset($input['query']['start_date']))
-            $sup->whereRaw("document.purchase_order.po_date >= '".$input['query']['start_date']." 00:00:00'");
+            $sup->whereRaw("document.purchase_order.po_date >= '".Converter::fromID($input['query']['start_date'])." 00:00:00'");
         if(isset($input['query']['end_date']))
-            $sup->whereRaw("document.purchase_order.po_date <= '".$input['query']['end_date']." 23:59:59'");
+            $sup->whereRaw("document.purchase_order.po_date <= '".Converter::fromID($input['query']['end_date'])." 23:59:59'");
 
         // where condition
         if(isset($input['query'])){
@@ -602,9 +601,9 @@ class PoController extends Controller
 
         // condition for date range
         if(isset($input['query']['start_date']))
-            $sup->whereRaw("document.purchase_order.po_date >= '".$input['query']['start_date']." 00:00:00'");
+            $sup->whereRaw("document.purchase_order.po_date >= '".Converter::fromID($input['query']['start_date'])." 00:00:00'");
         if(isset($input['query']['end_date']))
-            $sup->whereRaw("document.purchase_order.po_date <= '".$input['query']['end_date']." 23:59:59'");
+            $sup->whereRaw("document.purchase_order.po_date <= '".Converter::fromID($input['query']['end_date'])." 23:59:59'");
 
         // where condition
         if(isset($input['query'])){

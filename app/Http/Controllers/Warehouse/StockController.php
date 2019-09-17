@@ -15,7 +15,7 @@ use App\Model\Document\RequestToolsDetailModel AS ReqToolsDetail;
 
 // Embed a Helper
 use DB;
-use App\Helpers\{Api, Log};
+use App\Helpers\{Api, Log, Converter};
 use Illuminate\Http\Request;
 
 
@@ -378,7 +378,7 @@ class StockController extends Controller
             );
 
         // whole query
-        $sup = Qty::selectRaw('stock.qty.stock_notes, stock.qty.nik, stock.qty.stock_date, stock.qty.stock_price, master.master_supplier.supplier_name, stock.qty.main_stock_code, master.master_stock.*, master.master_measure.measure_type, (stock.qty.qty + CASE WHEN (
+        $sup = Qty::selectRaw("stock.qty.stock_notes, stock.qty.nik, FORMAT (stock.qty.stock_date, 'dd/MM/yyyy hh:mm:ss') as stock_date, stock.qty.stock_price, master.master_supplier.supplier_name, stock.qty.main_stock_code, master.master_stock.*, master.master_measure.measure_type, (stock.qty.qty + CASE WHEN (
             SELECT TOP 1 SUM(qty) FROM stock.qty_out WHERE
                 main_stock_code=stock.qty.main_stock_code
                 AND stock_price=stock.qty.stock_price
@@ -392,7 +392,7 @@ class StockController extends Controller
                     AND stock_date=stock.qty.stock_date
                     AND (supplier_code=stock.qty.supplier_code OR supplier_code IS NULL)
                 GROUP BY main_stock_code, stock_price, stock_date, supplier_code
-                ) ELSE 0 END) AS stock_qty')
+                ) ELSE 0 END) AS stock_qty")
             ->join('stock.stock', 'stock.stock.main_stock_code', '=', 'stock.qty.main_stock_code')
             ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code')
             ->join('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
@@ -401,9 +401,9 @@ class StockController extends Controller
 
         // condition for date range
         if(isset($input['query']['start_date']))
-            $sup->whereRaw("stock_date >= '".$input['query']['start_date']." 00:00:00'");
+            $sup->whereRaw("stock_date >= '".Converter::fromID($input['query']['start_date'])." 00:00:00'");
         if(isset($input['query']['end_date']))
-            $sup->whereRaw("stock_date <= '".$input['query']['end_date']." 23:59:59'");
+            $sup->whereRaw("stock_date <= '".Converter::fromID($input['query']['end_date'])." 23:59:59'");
 
         // where condition
         if(isset($input['query'])){
@@ -459,7 +459,7 @@ class StockController extends Controller
             );
 
         // whole query
-        $sup = Qty::selectRaw('stock.qty.stock_notes, stock.qty.nik, stock.qty.stock_date, stock.qty.stock_price, master.master_supplier.supplier_name, stock.qty.main_stock_code, master.master_stock.*, master.master_measure.measure_type, (stock.qty.qty + CASE WHEN (
+        $sup = Qty::selectRaw("stock.qty.stock_notes, stock.qty.nik, FORMAT (stock.qty.stock_date, 'dd/MM/yyyy hh:mm:ss') as stock_date, stock.qty.stock_price, master.master_supplier.supplier_name, stock.qty.main_stock_code, master.master_stock.*, master.master_measure.measure_type, (stock.qty.qty + CASE WHEN (
             SELECT TOP 1 SUM(qty) FROM stock.qty_out WHERE
                 main_stock_code=stock.qty.main_stock_code
                 AND stock_price=stock.qty.stock_price
@@ -473,7 +473,7 @@ class StockController extends Controller
                     AND stock_date=stock.qty.stock_date
                     AND (supplier_code=stock.qty.supplier_code OR supplier_code IS NULL)
                 GROUP BY main_stock_code, stock_price, stock_date, supplier_code
-                ) ELSE 0 END) AS stock_qty')
+                ) ELSE 0 END) AS stock_qty")
         ->join('stock.stock', 'stock.stock.main_stock_code', '=', 'stock.qty.main_stock_code')
         ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code')
         ->join('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
@@ -482,9 +482,9 @@ class StockController extends Controller
 
         // condition for date range
         if(isset($input['query']['start_date']))
-            $sup->whereRaw("stock_date >= '".$input['query']['start_date']." 00:00:00'");
+            $sup->whereRaw("stock_date >= '".Converter::fromID($input['query']['start_date'])." 00:00:00'");
         if(isset($input['query']['end_date']))
-            $sup->whereRaw("stock_date <= '".$input['query']['end_date']." 23:59:59'");
+            $sup->whereRaw("stock_date <= '".Converter::fromID($input['query']['end_date'])." 23:59:59'");
 
         // where condition
         if(isset($input['query'])){
@@ -562,7 +562,7 @@ class StockController extends Controller
             );
 
         // whole query
-        $sup = QtyOut::selectRaw('stock.qty_out.stock_notes, stock.qty_out.nik, stock.qty_out.stock_date, stock.qty_out.stock_out_date, stock.qty_out.stock_price, master.master_supplier.supplier_name, stock.qty_out.main_stock_code, master.master_stock.*, master.master_measure.measure_type, stock.qty_out.qty AS stock_qty')
+        $sup = QtyOut::selectRaw("stock.qty_out.stock_notes, stock.qty_out.nik, FORMAT (stock.qty_out.stock_date, 'dd/MM/yyyy hh:mm:ss') AS stock_date, FORMAT (stock.qty_out.stock_out_date, 'dd/MM/yyyy hh:mm:ss') AS stock_out_date, stock.qty_out.stock_price, master.master_supplier.supplier_name, stock.qty_out.main_stock_code, master.master_stock.*, master.master_measure.measure_type, stock.qty_out.qty AS stock_qty")
             ->join('stock.stock', 'stock.stock.main_stock_code', '=', 'stock.qty_out.main_stock_code')
             ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code')
             ->join('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
@@ -571,9 +571,9 @@ class StockController extends Controller
 
         // condition for date range
         if(isset($input['query']['start_date']))
-            $sup->whereRaw("stock_out_date >= '".$input['query']['start_date']." 00:00:00'");
+            $sup->whereRaw("stock_out_date >= '".Converter::fromID($input['query']['start_date'])." 00:00:00'");
         if(isset($input['query']['end_date']))
-            $sup->whereRaw("stock_out_date <= '".$input['query']['end_date']." 23:59:59'");
+            $sup->whereRaw("stock_out_date <= '".Converter::fromID($input['query']['end_date'])." 23:59:59'");
 
         // where condition
         if(isset($input['query'])){
@@ -629,7 +629,7 @@ class StockController extends Controller
             );
 
         // whole query
-        $sup = QtyOut::selectRaw('stock.qty_out.stock_notes, stock.qty_out.nik, stock.qty_out.stock_date, stock.qty_out.stock_out_date, stock.qty_out.stock_price, master.master_supplier.supplier_name, stock.qty_out.main_stock_code, master.master_stock.*, master.master_measure.measure_type, stock.qty_out.qty AS stock_qty')
+        $sup = QtyOut::selectRaw("stock.qty_out.stock_notes, stock.qty_out.nik, FORMAT (stock.qty_out.stock_date, 'dd/MM/yyyy hh:mm:ss') AS stock_date, FORMAT (stock.qty_out.stock_out_date, 'dd/MM/yyyy hh:mm:ss') AS stock_out_date, stock.qty_out.stock_price, master.master_supplier.supplier_name, stock.qty_out.main_stock_code, master.master_stock.*, master.master_measure.measure_type, stock.qty_out.qty AS stock_qty")
         ->join('stock.stock', 'stock.stock.main_stock_code', '=', 'stock.qty_out.main_stock_code')
         ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code')
         ->join('master.master_measure', 'master.master_measure.measure_code', '=', 'master.master_stock.measure_code')
@@ -638,9 +638,9 @@ class StockController extends Controller
 
         // condition for date range
         if(isset($input['query']['start_date']))
-            $sup->whereRaw("stock_out_date >= '".$input['query']['start_date']." 00:00:00'");
+            $sup->whereRaw("stock_out_date >= '".Converter::fromID($input['query']['start_date'])." 00:00:00'");
         if(isset($input['query']['end_date']))
-            $sup->whereRaw("stock_out_date <= '".$input['query']['end_date']." 23:59:59'");
+            $sup->whereRaw("stock_out_date <= '".Converter::fromID($input['query']['end_date'])." 23:59:59'");
 
         // where condition
         if(isset($input['query'])){
@@ -835,9 +835,9 @@ class StockController extends Controller
             );
         
         // date filter
-        if(isset($input['query']['start_date'])) $start_date = $input['query']['start_date'];
+        if(isset($input['query']['start_date'])) $start_date = Converter::fromID($input['query']['start_date']);
         if(isset($input['query']['end_date'])){
-            $end_date = $input['query']['end_date'];
+            $end_date = Converter::fromID($input['query']['end_date']);
             if(!isset($start_date))
                 $start_date = $end_date;
         }
@@ -941,9 +941,9 @@ class StockController extends Controller
             );
         
         // date filter
-        if(isset($input['query']['start_date'])) $start_date = $input['query']['start_date'];
+        if(isset($input['query']['start_date'])) $start_date = Converter::fromID($input['query']['start_date']);
         if(isset($input['query']['end_date'])){
-            $end_date = $input['query']['end_date'];
+            $end_date = Converter::fromID($input['query']['end_date']);
             if(!isset($start_date))
                 $start_date = $end_date;
         }
