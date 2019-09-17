@@ -27,7 +27,7 @@ class SupplierController extends Controller
 
     private function _generate_prefix(){
         $prefix = "SP";
-        $SP = Supplier::select('supplier_code')->orderBy('supplier_code', 'DESC')->get();
+        $SP = Supplier::select('supplier_code')->where('supplier_code', 'like', $prefix.'%')->orderBy('supplier_code', 'DESC')->get();
         if($SP->count() > 0){
             $SP = $SP->first();
             $tmp = explode($prefix, $SP->supplier_code);

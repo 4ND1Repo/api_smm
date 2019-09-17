@@ -481,8 +481,8 @@ INSERT INTO [master].[master_city](city_code,city_name,status_code) VALUES
 ('BGR','Bogor','ST01')
 GO
 INSERT INTO [master].[master_supplier](supplier_code, supplier_name, supplier_address, supplier_phone, supplier_category, city_code, status_code) VALUES
-('SPLR1', 'Supplier 1', 'Bandung', '02289874779', 'CAT1', 'BDG','ST01'),
-('SPLR2', 'Supplier 2', 'Jakarta', '02178236423', 'CAT3', 'JKT','ST01')
+('SP0001', 'Supplier 1', 'Bandung', '02289874779', 'CAT1', 'BDG','ST01'),
+('SP0002', 'Supplier 2', 'Jakarta', '02178236423', 'CAT3', 'JKT','ST01')
 GO
 INSERT INTO [master].[master_menu](id_menu, menu_name, menu_url,menu_icon,id_parent) VALUES
 (1, 'Beranda', '/', 'fa fa-home', NULL),

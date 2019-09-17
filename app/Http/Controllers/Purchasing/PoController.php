@@ -157,7 +157,9 @@ class PoController extends Controller
                   $do->on('DocDO.po_code','=','document.purchase_order_detail.po_code');
                   $do->on('DocDO.main_stock_code','=','document.purchase_order_detail.main_stock_code');
                 })
-                ->where('document.purchase_order_detail.po_code',$id)->get();
+                ->where('document.purchase_order_detail.po_code',$id);
+            dd($data['purchase_order_detail']->toSql());
+                // get();
         return response()->json(Api::response(true,"Sukses",$data),200);
     }
 
