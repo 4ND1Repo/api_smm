@@ -251,7 +251,7 @@ class RequestController extends Controller
             );
 
         // whole query
-        $sup = ReqTools::selectRaw('document.request_tools.*, (SELECT count(req_tools_code) FROM document.request_tools_detail WHERE req_tools_code=document.request_tools.req_tools_code) as sum_item, master.master_status.status_label')
+        $sup = ReqTools::selectRaw('document.request_tools.*, convert(varchar, document.request_tools.req_tools_date, 103) AS req_tools_date, (SELECT count(req_tools_code) FROM document.request_tools_detail WHERE req_tools_code=document.request_tools.req_tools_code) as sum_item, master.master_status.status_label')
         ->join('master.master_status', 'master.master_status.status_code', '=', 'document.request_tools.status')
         ->where(function($sup) use($input){
             $sup->where('document.request_tools.page_code_from', $input['page_code']);
@@ -746,5 +746,11 @@ class RequestController extends Controller
 
         return response()->json($data,200);
     }
+
+    public function chg_tools_status(Request $r){
+        if($r->has('status') && $r->has('req_tools_code'))
+            ReqTools::where('req_tools_code', '=', $r->req_tools_code)->update(['status' => $r->status]);
+        return response()->json(Api::response(1,'Sukses'), 200);
+     }
 
 }

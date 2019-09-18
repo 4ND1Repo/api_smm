@@ -290,6 +290,7 @@ $router->group(['prefix' => 'api', 'middleware' => 'cors'], function() use($rout
                 $router->post('get','Document\RequestController@get_tools');
                 $router->post('grid','Document\RequestController@grid_tools');
                 $router->post('send','Document\RequestController@send_tools');
+                $router->post('chg_status','Document\RequestController@chg_tools_status');
             });
 
             // request Purchase Order Group

@@ -281,7 +281,7 @@ class BorrowController extends Controller
             );
 
         // whole query
-        $query = Borrow::selectRaw('document.borrowed.*, master.master_stock.stock_name, master.master_stock.stock_code, master.master_stock.stock_type, master.master_stock.stock_size, master.master_status.status_label, company_name, DATEADD(day, borrowed_long_term, borrowed_date) AS borrowed_end_date')
+        $query = Borrow::selectRaw("document.borrowed.*, master.master_stock.stock_name, master.master_stock.stock_code, master.master_stock.stock_type, master.master_stock.stock_size, master.master_status.status_label, company_name, convert(varchar, borrowed_date, 103) AS borrowed_date, convert(varchar, DATEADD(day, borrowed_long_term, borrowed_date), 103) AS borrowed_end_date")
         ->join('stock.stock', 'stock.stock.main_stock_code', '=', 'document.borrowed.main_stock_code')
         ->join('master.master_stock', 'master.master_stock.stock_code', '=', 'stock.stock.stock_code')
         ->join('master.master_status', 'master.master_status.status_code', '=', 'document.borrowed.status')
